@@ -1,5 +1,3 @@
-# A case that may fail 
-
 # devtools::load_all() 
 library(lightgbm)
 library(qshapr)

@@ -13,9 +13,9 @@ y <- X[,1] + 2 * X[,2] + 0.5 * X[,3] + rnorm(n_samples, sd=0.1)
 model <- xgboost(
   data = X,
   label = y,
-  nrounds = 7,
-  max_depth = 3,   
-  eta = 1.0,       # Higher learning rate
+  nrounds = 1000,
+  max_depth = 2,   
+  eta = 0.01,       # Higher learning rate
   reg_lambda = 0,  # No regularization
   verbose = 0
 )

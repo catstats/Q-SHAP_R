@@ -155,18 +155,21 @@ void traversal_weight(
     //     children_left.size(), feature.size(),
     //     leaf_ind.size());
 
-    // static int root_calls = 0;
-    // if (v == 0 && depth == 0)
-    // {
-    //     root_calls++;
-    //     Rprintf("ROOT CALL #%d\n", root_calls);
-    // }
+    static int root_calls = 0;
+    if (v == 0 && depth == 0)
+    {
+        root_calls++;
+        Rprintf("ROOT CALL #%d\n", root_calls);
+    }
 
     int v_l = children_left(v);
     int v_r = children_right(v);
 
+    Rprintf("[trav NODE] v=%d depth=%d v_l=%d v_r=%d\n", v, depth, v_l, v_r);
+
     if (v_l < 0)
     {
+
         for (int i = 0; i < leaf_ind.size(); ++i)
         {
             if (leaf_ind(i) == v)
