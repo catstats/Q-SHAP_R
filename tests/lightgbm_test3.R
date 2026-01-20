@@ -12,7 +12,7 @@ y <- X[,1] + 2 * X[,2] + 0.5 * X[,3] + rnorm(n_samples, sd=0.1)
 # Train LightGBM model# 
 dtrain <- lgb.Dataset(data = X, label = y)
 model <- lgb.train(
-  params = list(objective = "regression", max_depth=3, num_leaves = 15, learning_rate=0.02, min_data_in_leaf = 5, verbose = -1),
+  params = list(objective = "regression", max_depth=3, learning_rate=0.02, min_data_in_leaf = 5, verbose = -1),
   data = dtrain,
   nrounds = 20,
   verbose = -1

@@ -45,7 +45,7 @@ void T2_sample(
     Eigen::MatrixXd &shap_value,
     const Eigen::VectorXi &feature_uniq)
 {
-    Rprintf("[T2] L=%d init_prediction.size=%d\n", (int)w_matrix.rows(), (int)init_prediction.size());
+    // Rprintf("[T2] L=%d init_prediction.size=%d\n", (int)w_matrix.rows(), (int)init_prediction.size());
     if (init_prediction.size() != w_matrix.rows())
         Rcpp::stop("init_prediction length mismatch: init=%d, L=%d",
                    (int)init_prediction.size(), (int)w_matrix.rows());
