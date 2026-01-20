@@ -67,94 +67,62 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
 
 # Formats an xgboost model into a list of simple_tree objects
 #' @keywords internal
-xgb_formatter <- function(xgb_model, max_depth) {
-  # Extract tree information using xgb.model.dt.tree with use_int_id=TRUE for easier indexing
-  tree_dt <- xgb.model.dt.tree(model = xgb_model, use_int_id = TRUE)
-  
-  # Get unique tree IDs
-  tree_ids <- unique(tree_dt$Tree)
-  
-  # Initialize list to store simple_tree objects
-  xgb_trees <- list()
-  
-  # Process each tree
-  for (tree_id in tree_ids) {
-    # Filter data for current tree
-    tree_data <- tree_dt[tree_dt$Tree == tree_id, ]
-    
-    # Sort by Node to ensure proper ordering
-    tree_data <- tree_data[order(tree_data$Node), ]
-    
-    # Get number of nodes
-    node_count <- nrow(tree_data)
-    
-    # Initialize vectors for simple_tree structure
-    children_left <- rep(-1L, node_count)
-    children_right <- rep(-1L, node_count)
-    feature <- rep(-1L, node_count)
-    threshold <- rep(0.0, node_count)
-    n_node_samples <- rep(0.0, node_count)  # Using Cover from xgboost
-    value <- rep(0.0, node_count)  # Using Quality from xgboost
-    
-    # Create a mapping from Node ID to array index
-    node_to_index <- setNames(seq_len(node_count) - 1L, tree_data$Node)  # 0-based indexing
-    
-    # Process each node
-    for (i in seq_len(node_count)) {
-      node_data <- tree_data[i, ]
-      
-      # Handle feature indices - convert feature names to indices if needed
-      if (!is.na(node_data$Feature) && node_data$Feature != "Leaf") {
-        # If Feature is a character (feature name), we need to convert to index
-        if (is.character(node_data$Feature)) {
-          # Get all unique feature names in the entire model (across all trees)
-          all_features <- unique(tree_dt$Feature[tree_dt$Feature != "Leaf" & !is.na(tree_dt$Feature)])
-          feature[i] <- match(node_data$Feature, all_features) - 1L  # 0-based indexing
-        } else {
-          # If it's already numeric, use it directly (but ensure 0-based)
-          feature[i] <- as.integer(node_data$Feature)
-        }
-        
-        threshold[i] <- as.numeric(node_data$Split)
-      }
-      
-      # Set children indices using the node mapping
-      if (!is.na(node_data$Yes)) {
-        yes_node_id <- as.character(node_data$Yes)
-        if (yes_node_id %in% names(node_to_index)) {
-          children_left[i] <- node_to_index[yes_node_id]
-        }
-      }
-      
-      if (!is.na(node_data$No)) {
-        no_node_id <- as.character(node_data$No)
-        if (no_node_id %in% names(node_to_index)) {
-          children_right[i] <- node_to_index[no_node_id]
-        }
-      }
-      
-      # Set node samples (using Cover)
-      n_node_samples[i] <- as.numeric(node_data$Cover)
-      
-      # Set node value (using Quality)
-      value[i] <- as.numeric(node_data$Quality)
-    }
-    
-    # Create simple_tree object
-    tree_obj <- simple_tree(
-      children_left = children_left,
-      children_right = children_right,
-      feature = feature,
-      threshold = threshold,
-      max_depth = max_depth,
-      n_node_samples = n_node_samples,
-      value = value,
-      node_count = node_count
-    )
-    
-    # Add to list
-    xgb_trees[[length(xgb_trees) + 1]] <- tree_obj
+xgb_formatter <- function(model_json, max_depth) {
+  # model_json can be:
+  #  (1) a parsed list from jsonlite::fromJSON(..., simplifyVector = FALSE), or
+  #  (2) a filename to a JSON model file, or
+  #  (3) an xgb.Booster (we'll save->read automatically)
+
+  # case (3): booster
+  if (inherits(model_json, "xgb.Booster")) {
+    fn <- tempfile(fileext = ".json")
+    xgboost::xgb.save(model_json, fn)
+    model_json <- jsonlite::fromJSON(fn, simplifyVector = FALSE)
+    unlink(fn)
   }
-  
-  xgb_trees
+
+  # case (2): filename
+  if (is.character(model_json) && length(model_json) == 1L && file.exists(model_json)) {
+    model_json <- jsonlite::fromJSON(model_json, simplifyVector = FALSE)
+  }
+
+  # case (1): parsed json list
+  if (!is.list(model_json)) stop("model_json must be xgb.Booster, a parsed JSON list, or a JSON filename.")
+
+  # ---- robust tree path (xgboost JSON differs across builds) ----
+  gb <- model_json$learner$gradient_booster
+  if (is.null(gb)) stop("JSON missing learner$gradient_booster")
+
+  # common locations:
+  # A) gb$model$trees
+  trees_data <- gb$model$trees
+
+  # B) gb$gbtree_model$trees (seen in many versions)
+  if (is.null(trees_data)) trees_data <- gb$gbtree_model$trees
+
+  # C) gb$model$gbtree_model_param + gb$model$trees (rare combos)
+  if (is.null(trees_data) && !is.null(gb$model) && !is.null(gb$model$trees)) trees_data <- gb$model$trees
+
+  if (is.null(trees_data)) {
+    stop("Could not find trees in JSON. Inspect with names(model_json$learner$gradient_booster).")
+  }
+
+  out <- vector("list", length(trees_data))
+
+  for (i in seq_along(trees_data)) {
+    tr <- trees_data[[i]]
+
+    out[[i]] <- simple_tree(
+      children_left  = as.integer(unlist(tr$left_children)),
+      children_right = as.integer(unlist(tr$right_children)),
+      feature        = as.integer(unlist(tr$split_indices)),
+      threshold      = as.numeric(unlist(tr$split_conditions)),
+      max_depth      = as.integer(max_depth),
+      n_node_samples = as.numeric(unlist(tr$sum_hessian)),
+      value          = as.numeric(unlist(tr$base_weights)),
+      node_count     = as.integer(tr$tree_param$num_nodes)
+    )
+  }
+
+  out
 }

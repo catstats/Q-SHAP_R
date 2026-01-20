@@ -15,9 +15,9 @@ model <- xgboost(
   data = X,
   label = y,
   objective = "reg:squarederror",
-  nrounds = 2,
-  max_depth = 3,
+  nrounds = 20,
   eta = 1,
+  max_depth = 2,
   verbose = 0
 )
 

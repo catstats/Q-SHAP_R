@@ -17,12 +17,16 @@ create_tree_explainer <- function(tree_model, max_depth = NULL, base_score = NUL
 #' @export
 create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
 
-  # Apparently we don't have to do some weird JSON workaround
+  tmp <- tempfile(fileext = ".json")
+  xgboost::xgb.save(tree_model, tmp)
+  model_json <- jsonlite::fromJSON(tmp, simplifyVector = FALSE)
+  unlink(tmp)
+
   max_depth <- if (!is.null(tree_model$params$max_depth)) tree_model$params$max_depth else 6
-  base_score <- if (!is.null(tree_model$params$base_score)) tree_model$params$base_score else 0.5
+  base_score <- as.numeric(model_json$learner$learner_model_param$base_score)
 
 
-  xgb_trees <- xgb_formatter(tree_model, max_depth)
+  xgb_trees <- xgb_formatter(model_json, max_depth)
 
   explainer <- structure(list(
     model = tree_model,
