@@ -19,7 +19,7 @@ create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
 
   # Apparently we don't have to do some weird JSON workaround
   max_depth <- if (!is.null(tree_model$params$max_depth)) tree_model$params$max_depth else 6
-  base_score <- if (!is.null(tree_model$params$base_score)) tree_model$params$base_score else 0.0
+  base_score <- if (!is.null(tree_model$params$base_score)) tree_model$params$base_score else 0.5
 
 
   xgb_trees <- xgb_formatter(tree_model, max_depth)
