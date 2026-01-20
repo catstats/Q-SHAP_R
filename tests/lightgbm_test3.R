@@ -8,15 +8,15 @@ library(qshapr)
 set.seed(0)
 n_samples <- 100
 p <- 3
-X <- matrix(runif(n_samples * 3), n_samples, p)
+X <- matrix(runif(n_samples * p), n_samples, p)
 y <- X[,1] + 2 * X[,2] + 0.5 * X[,3] + rnorm(n_samples, sd=0.1)
 
 # Train LightGBM model# 
 dtrain <- lgb.Dataset(data = X, label = y)
 model <- lgb.train(
-  params = list(objective = "regression", num_leaves = 15, min_data_in_leaf = 5, verbose = -1),
+  params = list(objective = "regression", max_depth=2, num_leaves = 15, min_data_in_leaf = 5, verbose = -1),
   data = dtrain,
-  nrounds = 2,
+  nrounds = 100,
   verbose = -1
 )
 

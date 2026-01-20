@@ -212,13 +212,16 @@ lgb_tree_to_simple <- function(tree_structure, max_depth) {
       n_samples = 100  # Default sample count
     )
     
-    # Check if this is a leaf node by looking for leaf_value (and absence of split_feature)
-    if ("leaf_value" %in% names(node_data) && !is.null(node_data$leaf_value) && 
-        !("split_feature" %in% names(node_data))) {
+   # Check if this is a leaf node by looking for leaf_value 
+    if ("leaf_value" %in% names(node_data) &&
+        length(node_data$leaf_value) > 0 &&
+        !is.na(node_data$leaf_value[1])) {
       # Leaf node
       node_info$value <- node_data$leaf_value[1]  # Extract first value
       node_info$n_samples <- if("leaf_count" %in% names(node_data)) node_data$leaf_count[1] else 100
-    } else if ("split_feature" %in% names(node_data) && !is.null(node_data$split_feature)) {
+    } else if ("split_feature" %in% names(node_data) &&
+         length(node_data$split_feature) > 0 &&
+         !is.na(node_data$split_feature[1])) {
       # Internal node - has split information
       node_info$feature <- node_data$split_feature[1]
       node_info$threshold <- if("threshold" %in% names(node_data)) node_data$threshold[1] else 0.0
