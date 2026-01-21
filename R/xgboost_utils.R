@@ -24,6 +24,7 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
     local_res <- NULL 
     
     if (i == 1) { # For the first tree (round 1)
+      # substract null basedline
       local_res <- y - base_score
       
       # SHAP values for the first tree (round 1 only)
