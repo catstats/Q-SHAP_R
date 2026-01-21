@@ -9,3 +9,4 @@ src/*.dylib
 # plots and json files
 *.pdf*
 *.json*
+*.out*

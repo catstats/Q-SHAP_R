@@ -13,6 +13,7 @@ struct AccTimer
         acc += std::chrono::duration<double>(t1 - t0).count();
     }
 };
+
 Eigen::MatrixXd T2(
     const Eigen::MatrixXd &x,
     const Rcpp::List &tree_summary,
@@ -20,6 +21,10 @@ Eigen::MatrixXd T2(
     const Eigen::MatrixXcd &store_z,
     bool parallel)
 {
+    double t_weight = 0.0;
+    double t_t2sample = 0.0;
+    double t_unpack = 0.0; // optional: overhead for w.first/w.second copies
+
     TreeSummary summary_tree = list_to_tree_summary(tree_summary);
 
     std::vector<double> init_prediction_vec;
@@ -49,6 +54,12 @@ Eigen::MatrixXd T2(
     return shap_value;
 }
 
+#include <complex>
+#include <vector>
+#include <cmath>
+#include <Eigen/Dense>
+
+// A much more optimized version of T2_sample
 void T2_sample(
     int i,
     const Eigen::MatrixXd &w_matrix,
@@ -59,84 +70,110 @@ void T2_sample(
     Eigen::MatrixXd &shap_value,
     const Eigen::VectorXi &feature_uniq)
 {
-    if (init_prediction.size() != w_matrix.rows())
-        Rcpp::stop("init_prediction length mismatch: init=%d, L=%d",
-                   (int)init_prediction.size(), (int)w_matrix.rows());
-    int p = w_matrix.cols();
-    int L = w_matrix.rows();
+    const int L = w_matrix.rows();
+    const double eps2 = 1e-18; // (1e-9)^2
 
-    for (int l1 = 0; l1 < L; l1++)
+    // Reuse buffers across calls (thread-safe if you don't parallelize here)
+    thread_local std::vector<int> union_feats;
+    thread_local std::vector<std::complex<double>> pz;
+
+    union_feats.clear();
+    union_feats.reserve(feature_uniq.size()); // small
+    // pz sized later per n12_c
+
+    for (int l1 = 0; l1 < L; ++l1)
     {
-        for (int l2 = l1; l2 < L; l2++)
+        for (int l2 = l1; l2 < L; ++l2)
         {
-            double init_prediction_product = init_prediction(l1) * init_prediction(l2);
+            const double init_prod = init_prediction(l1) * init_prediction(l2);
 
-            std::vector<int> union_f12_vec;
-            for (int j_idx = 0; j_idx < feature_uniq.size(); j_idx++)
+            // ---- build union feature list (still same logic, but reuse vector) ----
+            union_feats.clear();
+            for (int j_idx = 0; j_idx < feature_uniq.size(); ++j_idx)
             {
-                int feat = feature_uniq(j_idx);
+                const int feat = feature_uniq(j_idx);
                 if ((w_ind(l1, feat) + w_ind(l2, feat)) >= 1)
-                {
-                    union_f12_vec.push_back(feat);
-                }
+                    union_feats.push_back(feat);
             }
-
-            if (union_f12_vec.empty())
-                continue;
-
-            Eigen::Map<Eigen::VectorXi> union_f12(union_f12_vec.data(), union_f12_vec.size());
-
-            int n12 = union_f12.size();
+            const int n12 = (int)union_feats.size();
             if (n12 == 0)
                 continue;
 
-            int n12_c = n12 / 2 + 1;
+            const int n12_c = n12 / 2 + 1;
 
-            Eigen::VectorXcd v_invc = store_v_invc.row(n12).head(n12_c);
-            Eigen::VectorXcd z_roots = store_z.row(n12).head(n12_c);
+            // ---- NO COPIES: refer to stored rows ----
+            // Important: use Ref to avoid allocation / copy
+            const Eigen::Ref<const Eigen::VectorXcd> v_invc =
+                store_v_invc.row(n12).head(n12_c);
+            const Eigen::Ref<const Eigen::VectorXcd> z_roots =
+                store_z.row(n12).head(n12_c);
 
-            Eigen::VectorXcd p_z_overall = Eigen::VectorXcd::Zero(n12_c);
-            for (int k_idx = 0; k_idx < n12_c; k_idx++)
+            // ---- compute p_z_overall(k) for all k ----
+            pz.assign(n12_c, std::complex<double>(1.0, 0.0)); // reuse capacity, but sets values
+
+            for (int k = 0; k < n12_c; ++k)
             {
-                std::complex<double> prod_overall(1.0, 0.0);
-                for (int feat_idx = 0; feat_idx < union_f12.size(); feat_idx++)
+                std::complex<double> prod(1.0, 0.0);
+                const std::complex<double> zk = z_roots(k);
+
+                // product over features in union
+                for (int idx = 0; idx < n12; ++idx)
                 {
-                    int current_feat = union_f12(feat_idx);
-                    prod_overall *= z_roots(k_idx) + w_matrix(l1, current_feat) * w_matrix(l2, current_feat);
+                    const int f = union_feats[idx];
+                    const double a = w_matrix(l1, f);
+                    const double b = w_matrix(l2, f);
+                    prod *= (zk + (a * b));
                 }
-                p_z_overall(k_idx) = prod_overall;
+                pz[k] = prod;
             }
 
-            for (int idx = 0; idx < union_f12.size(); idx++)
+            // ---- for each feature j in union: compute dot(pz/denom, v_invc) ON THE FLY ----
+            for (int idx = 0; idx < n12; ++idx)
             {
-                int j_feature = union_f12(idx);
+                const int j = union_feats[idx];
+                const double a = w_matrix(l1, j);
+                const double b = w_matrix(l2, j);
+                const double w_factor = (a * b - 1.0);
 
-                Eigen::VectorXcd tmp_p_z_for_j = Eigen::VectorXcd::Zero(n12_c);
-                for (int k_idx = 0; k_idx < n12_c; k_idx++)
+                // Compute contribution_val = complex_dot_v2(tmp, v_invc, n12)
+                // where tmp[k] = pz[k] / (z_roots[k] + a*b).
+                std::complex<double> acc = pz[0] / (z_roots(0) + (a * b)) * v_invc(0);
+
+                if (n12 % 2 == 0)
                 {
-                    std::complex<double> denominator = z_roots(k_idx) + w_matrix(l1, j_feature) * w_matrix(l2, j_feature);
-                    if (std::abs(denominator) < 1e-9)
+                    // even: middle terms doubled except endpoints
+                    for (int k = 1; k < n12_c - 1; ++k)
                     {
-                        tmp_p_z_for_j(k_idx) = 0;
+                        const std::complex<double> denom = z_roots(k) + (a * b);
+                        // tiny denom guard (use norm to avoid sqrt)
+                        if (std::norm(denom) < eps2)
+                            continue;
+                        acc += 2.0 * (pz[k] / denom) * v_invc(k);
                     }
-                    else
+                    // last term not doubled
                     {
-                        tmp_p_z_for_j(k_idx) = p_z_overall(k_idx) / denominator;
+                        const int k = n12_c - 1;
+                        const std::complex<double> denom = z_roots(k) + (a * b);
+                        if (std::norm(denom) >= eps2)
+                            acc += (pz[k] / denom) * v_invc(k);
                     }
-                }
-
-                double w_factor = w_matrix(l1, j_feature) * w_matrix(l2, j_feature) - 1.0;
-                double contribution_val = complex_dot_v2(tmp_p_z_for_j, v_invc, n12);
-                double final_contribution = w_factor * contribution_val * init_prediction_product;
-
-                if (l1 == l2)
-                {
-                    shap_value(i, j_feature) += final_contribution;
                 }
                 else
                 {
-                    shap_value(i, j_feature) += 2.0 * final_contribution;
+                    // odd: all k>=1 doubled
+                    for (int k = 1; k < n12_c; ++k)
+                    {
+                        const std::complex<double> denom = z_roots(k) + (a * b);
+                        if (std::norm(denom) < eps2)
+                            continue;
+                        acc += 2.0 * (pz[k] / denom) * v_invc(k);
+                    }
                 }
+
+                const double contribution_val = acc.real();
+                const double final_contribution = w_factor * contribution_val * init_prod;
+
+                shap_value(i, j) += (l1 == l2) ? final_contribution : (2.0 * final_contribution);
             }
         }
     }
