@@ -1,5 +1,7 @@
 NULL
 
+library(progress)
+
 # Loss implementation for LightGBM model
 #' @keywords internal
 qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
@@ -20,8 +22,16 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
     x <- as.matrix(x)
   }
 
+    pb <- progress::progress_bar$new(
+      format = "Progress [:bar] :current/:total (:percent)",
+      total = num_tree,
+      clear = FALSE,
+      width = 60
+    )
+
   for (i in seq_len(num_tree)) {
-    
+
+    pb$tick()
     local_res <- NULL 
     
     if (i == 1) {

@@ -1,6 +1,8 @@
 #' @importFrom xgboost xgb.model.dt.tree
 NULL
 
+
+library(progress)
 # Loss implementation for xgboost model
 #' @keywords internal
 qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
@@ -16,11 +18,16 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
   if (!is.matrix(x)) {
     x <- as.matrix(x)
   }
-
+    pb <- progress::progress_bar$new(
+      format = "Progress [:bar] :current/:total (:percent)",
+      total = num_tree,
+      clear = FALSE,
+      width = 60
+    )
   # iterations are 1-based in xgboost predict
   for (i in seq_len(num_tree)) { # i is the 1-based index of the current tree (round i)
   
-    
+    pb$tick()
     local_res <- NULL 
     
     if (i == 1) { # For the first tree (round 1)
