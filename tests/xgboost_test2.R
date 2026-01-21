@@ -13,7 +13,7 @@ model <- xgboost(
   label = y,
   nrounds = 1,
   max_depth = 3,   # Optimal depth for Q-SHAP accuracy
-  eta = 1.0,       # Higher learning rate
+  eta = 0.3,       # Higher learning rate
   reg_lambda = 0,  # No regularization
   verbose = 0
 )

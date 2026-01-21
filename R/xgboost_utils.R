@@ -19,6 +19,7 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
 
   # iterations are 1-based in xgboost predict
   for (i in seq_len(num_tree)) { # i is the 1-based index of the current tree (round i)
+  
     
     local_res <- NULL 
     
@@ -66,8 +67,9 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
 
 
 # Formats an xgboost model into a list of simple_tree objects
+# Becareful that this part is different from the Python version, we scale leaf weights here 
 #' @keywords internal
-xgb_formatter <- function(model_json, max_depth) {
+xgb_formatter <- function(model_json, max_depth, eta = 1.0) {
   # model_json can be:
   #  (1) a parsed list from jsonlite::fromJSON(..., simplifyVector = FALSE), or
   #  (2) a filename to a JSON model file, or
@@ -112,6 +114,9 @@ xgb_formatter <- function(model_json, max_depth) {
   for (i in seq_along(trees_data)) {
     tr <- trees_data[[i]]
 
+    base_w <- as.numeric(unlist(tr$base_weights))
+    base_w <- base_w * eta
+
     out[[i]] <- simple_tree(
       children_left  = as.integer(unlist(tr$left_children)),
       children_right = as.integer(unlist(tr$right_children)),
@@ -119,7 +124,7 @@ xgb_formatter <- function(model_json, max_depth) {
       threshold      = as.numeric(unlist(tr$split_conditions)),
       max_depth      = as.integer(max_depth),
       n_node_samples = as.numeric(unlist(tr$sum_hessian)),
-      value          = as.numeric(unlist(tr$base_weights)),
+      value          = base_w,
       node_count     = as.integer(tr$tree_param$num_nodes)
     )
   }

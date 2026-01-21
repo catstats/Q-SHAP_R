@@ -17,6 +17,7 @@ create_tree_explainer <- function(tree_model, max_depth = NULL, base_score = NUL
 #' @export
 create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
 
+
   tmp <- tempfile(fileext = ".json")
   xgboost::xgb.save(tree_model, tmp)
   model_json <- jsonlite::fromJSON(tmp, simplifyVector = FALSE)
@@ -25,8 +26,17 @@ create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
   max_depth <- if (!is.null(tree_model$params$max_depth)) tree_model$params$max_depth else 6
   base_score <- as.numeric(model_json$learner$learner_model_param$base_score)
 
+  # eta: try params first, else JSON
+  eta <- tree_model$params$eta
+  if (is.null(eta)) {
+    # common JSON locations depending on xgboost build
+    eta <- model_json$learner$gradient_booster$gbtree_train_param$learning_rate
+    if (is.null(eta)) eta <- model_json$learner$gradient_booster$gbtree_train_param$eta
+  }
+  if (is.null(eta)) eta <- 0.3
+  eta <- as.numeric(eta)
 
-  xgb_trees <- xgb_formatter(model_json, max_depth)
+  xgb_trees <- xgb_formatter(model_json, max_depth, eta)
 
   explainer <- structure(list(
     model = tree_model,
