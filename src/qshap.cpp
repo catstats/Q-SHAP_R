@@ -1,5 +1,24 @@
 #include "qshap.h"
 
+#include <chrono>
+
+struct AccTimer
+{
+    double &acc;
+    std::chrono::high_resolution_clock::time_point t0;
+    AccTimer(double &a) : acc(a), t0(std::chrono::high_resolution_clock::now()) {}
+    ~AccTimer()
+    {
+        auto t1 = std::chrono::high_resolution_clock::now();
+        acc += std::chrono::duration<double>(t1 - t0).count();
+    }
+};
+
+// per .Call / per tree
+static double t_weight = 0.0;
+static double t_T2sample = 0.0;
+static double t_fill = 0.0;
+
 Eigen::MatrixXd T2(
     const Eigen::MatrixXd &x,
     const Rcpp::List &tree_summary,
@@ -25,11 +44,26 @@ Eigen::MatrixXd T2(
     {
         Eigen::VectorXd xi = x.row(i);
 
-        std::pair<Eigen::MatrixXd, Eigen::MatrixXi> w = weight(xi, summary_tree);
-        Eigen::MatrixXd w_matrix = w.first;
-        Eigen::MatrixXi w_ind = w.second;
+        // std::pair<Eigen::MatrixXd, Eigen::MatrixXi> w = weight(xi, summary_tree);
 
-        T2_sample(i, w_matrix, w_ind, init_prediction, store_v_invc, store_z, shap_value, summary_tree.feature_uniq);
+        //  Eigen::MatrixXd w_matrix = w.first;
+        // Eigen::MatrixXi w_ind = w.second;
+
+        Eigen::MatrixXd w_matrix;
+        Eigen::MatrixXi w_ind;
+        {
+            AccTimer tt(t_weight);
+            auto w = weight(xi, summary_tree);
+            w_matrix = std::move(w.first);
+            w_ind = std::move(w.second);
+        }
+
+        // T2_sample(i, w_matrix, w_ind, init_prediction, store_v_invc, store_z, shap_value, summary_tree.feature_uniq);
+        {
+            AccTimer tt(t_T2sample);
+            T2_sample(i, w_matrix, w_ind, init_prediction, store_v_invc, store_z,
+                      shap_value, summary_tree.feature_uniq);
+        }
     }
 
     return shap_value;
@@ -45,7 +79,6 @@ void T2_sample(
     Eigen::MatrixXd &shap_value,
     const Eigen::VectorXi &feature_uniq)
 {
-    // Rprintf("[T2] L=%d init_prediction.size=%d\n", (int)w_matrix.rows(), (int)init_prediction.size());
     if (init_prediction.size() != w_matrix.rows())
         Rcpp::stop("init_prediction length mismatch: init=%d, L=%d",
                    (int)init_prediction.size(), (int)w_matrix.rows());
@@ -149,13 +182,27 @@ Eigen::MatrixXd loss_treeshap(
     Eigen::MatrixXd square_treeshap_term = T2_values * learning_rate * learning_rate;
     Eigen::MatrixXd scaled_T0_x_term = T0_x * learning_rate;
 
-    for (int i = 0; i < n_samples; i++)
+    // for (int i = 0; i < n_samples; i++)
+    // {
+    //     for (int j = 0; j < n_features; j++)
+    //     {
+    //         loss(i, j) = square_treeshap_term(i, j) - 2 * y(i) * scaled_T0_x_term(i, j);
+    //     }
+    // }
     {
-        for (int j = 0; j < n_features; j++)
-        {
-            loss(i, j) = square_treeshap_term(i, j) - 2 * y(i) * scaled_T0_x_term(i, j);
-        }
+        AccTimer tt(t_fill);
+        // for (int i = 0; i < n_samples; i++)
+        // {
+        //     for (int j = 0; j < n_features; j++)
+        //     {
+        //         loss(i, j) = square_treeshap_term(i, j) - 2 * y(i) * scaled_T0_x_term(i, j);
+        //     }
+        // }
+        // vectorized version
+        loss = square_treeshap_term;
+        loss.noalias() -= (scaled_T0_x_term.array().colwise() * (2.0 * y.array())).matrix();
     }
-
+    Rprintf("[profile] weight=%.4f T2sample=%.4f fill=%.4f\n", t_weight, t_T2sample, t_fill);
+    t_weight = t_T2sample = t_fill = 0.0; // reset so it doesn't accumulate across trees
     return loss;
 }

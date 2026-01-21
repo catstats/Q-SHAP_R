@@ -5,20 +5,22 @@ library(qshapr)
 # Create synthetic data  
 set.seed(0)
 n_samples <- 1000
-p <- 10
+p <- 100
 X <- matrix(runif(n_samples * p), n_samples, p)
 y <- X[,1] + 2 * X[,2] + 0.5 * X[,3] ** 2 + rnorm(n_samples, sd=0.1)
 
 
 dtrain <- xgb.DMatrix(data = X, label = y)
 
+# using default base_score=0.5 can result in very poor prediction for small number of trees and eta.
 model <- xgb.train(
   data = dtrain,
   nrounds = 5,
   params = list(
     objective = "reg:squarederror",
+    eta = 0.01,
     base_score = mean(y),
-    max_depth = 2
+    max_depth = 3
   ),
   verbose = 0
 )

@@ -156,11 +156,6 @@ void traversal_weight(
     //     leaf_ind.size());
 
     static int root_calls = 0;
-    // if (v == 0 && depth == 0)
-    // {
-    //     root_calls++;
-    //     Rprintf("ROOT CALL #%d\n", root_calls);
-    // }
 
     int v_l = children_left(v);
     int v_r = children_right(v);
