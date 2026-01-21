@@ -68,15 +68,16 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
         # Remove the bias column (last column) to get just feature contributions
         T0_x_tree <- shap_contrib_matrix[, -ncol(shap_contrib_matrix), drop = FALSE]
       } else {
-        # For subsequent trees, get marginal SHAP contribution of tree i
-        # SHAP from iterations 1 to i
-        shap_total_up_to_i <- predict(model, x, type = "contrib", num_iteration = i)
-        # SHAP from iterations 1 to i-1
-        shap_total_up_to_i_minus_1 <- predict(model, x, type = "contrib", num_iteration = i - 1)
-        
-        # Marginal SHAP contribution of tree i (remove bias columns)
-        T0_x_tree <- shap_total_up_to_i[, -ncol(shap_total_up_to_i), drop = FALSE] - 
-                     shap_total_up_to_i_minus_1[, -ncol(shap_total_up_to_i_minus_1), drop = FALSE]
+        shap_i <- predict(
+            model, x,
+            type = "contrib",
+            start_iteration = i - 1,  # LightGBM is 0-based here
+            num_iteration   = 1
+          )
+
+        # remove bias column
+        T0_x_tree <- shap_i[, -ncol(shap_i), drop = FALSE]
+  
       }
     }, error = function(e) {
       # Fallback: use full model SHAP divided by number of trees

@@ -1,12 +1,6 @@
 #' @importFrom xgboost xgb.model.dt.tree
 NULL
 
-.time_it <- function(expr) {
-  ptm <- proc.time()
-  val <- eval.parent(substitute(expr))
-  dt <- proc.time() - ptm
-  list(value = val, elapsed = as.numeric(dt[["elapsed"]]))
-}
 
 library(progress)
 # Loss implementation for xgboost model
@@ -36,7 +30,7 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
     pb$tick()
 
     local_res <- NULL 
-       t0 <- proc.time()
+
     if (i == 1) { # For the first tree (round 1)
       # substract null basedline
       local_res <- y - base_score
@@ -62,7 +56,6 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
                    shap_total_up_to_round_i_minus_1[, -ncol(shap_total_up_to_round_i_minus_1), drop = FALSE]
     }
 
-    print( proc.time() - t0)
     
     # xgb_trees is a 1-indexed list in R. xgb_trees[[i]] is the tree for round i.
     summary_tree <- summarize_tree(xgb_trees[[i]])
