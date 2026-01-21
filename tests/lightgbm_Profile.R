@@ -44,9 +44,10 @@ true_rsq <- 1 - sum((y - ypred)^2) / sum((y - mean(y))^2)
 # --------------------------
 # 4) Q-SHAP (your package)
 # --------------------------
-explainer <- qshapr::create_tree_explainer(model)
+
 
 t_qshap <- system.time({
+  explainer <- qshapr::create_tree_explainer(model)
   rsq_contributions <- qshapr::qshap_rsq(explainer, X, y)
 })
 print(t_qshap)
