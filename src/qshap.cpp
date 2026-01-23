@@ -41,14 +41,8 @@ Eigen::MatrixXd T2(
 
     for (int i = 0; i < x.rows(); i++)
     {
-        Eigen::VectorXd xi = x.row(i);
-
-        std::pair<Eigen::MatrixXd, Eigen::MatrixXi> w = weight(xi, summary_tree);
-
-        Eigen::MatrixXd w_matrix = w.first;
-        Eigen::MatrixXi w_ind = w.second;
-
-        T2_sample(i, w_matrix, w_ind, init_prediction, store_v_invc, store_z, shap_value, summary_tree.feature_uniq);
+        const auto w = weight(x.row(i), summary_tree);
+        T2_sample(i, w.first, w.second, init_prediction, store_v_invc, store_z, shap_value, summary_tree.feature_uniq);
     }
 
     return shap_value;
@@ -189,18 +183,44 @@ Eigen::MatrixXd loss_treeshap(
     double learning_rate)
 {
 
-    int n_samples = x.rows();
-    int n_features = T0_x.cols();
+    const int n_samples = x.rows();
+    const int n_features = T0_x.cols();
 
-    Eigen::MatrixXd loss = Eigen::MatrixXd::Zero(n_samples, n_features);
-
+    // Compute T2 once
     Eigen::MatrixXd T2_values = T2(x, tree_summary, store_v_invc, store_z, false);
 
-    Eigen::MatrixXd square_treeshap_term = T2_values * learning_rate * learning_rate;
-    Eigen::MatrixXd scaled_T0_x_term = T0_x * learning_rate;
+    // Precompute scalars
+    const double lr = learning_rate;
+    const double lr2 = lr * lr;
+    const double c = 2.0 * lr;
 
-    loss = square_treeshap_term;
-    loss.noalias() -= (scaled_T0_x_term.array().colwise() * (2.0 * y.array())).matrix();
+    // Robust lr==1 check to avoid scaling, as xgboost and lightgbm already adjusted for scaliing
+    const bool lr_is_one = std::abs(lr - 1.0) <= 1e-12;
+
+    // Allocate output
+    Eigen::MatrixXd loss(n_samples, n_features);
+
+    if (lr_is_one)
+    {
+        // loss = T2_values - 2 * (T0_x .* y)   (columnwise)
+        loss.noalias() = T2_values;
+
+        for (int j = 0; j < n_features; ++j)
+        {
+            loss.col(j).noalias() -= 2.0 * T0_x.col(j).cwiseProduct(y);
+        }
+    }
+    else
+    {
+        // loss = lr^2 * T2_values - (2*lr) * (T0_x .* y)   (columnwise)
+        loss.noalias() = T2_values;
+        loss *= lr2;
+
+        for (int j = 0; j < n_features; ++j)
+        {
+            loss.col(j).noalias() -= c * T0_x.col(j).cwiseProduct(y);
+        }
+    }
 
     return loss;
 }

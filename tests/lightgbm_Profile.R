@@ -10,7 +10,7 @@ set.seed(0)
 # 1) Data
 # --------------------------
 n_samples <- 1000
-p <- 10
+p <- 100
 X <- matrix(runif(n_samples * p), n_samples, p)
 y <- X[,1] + 2 * X[,2] + 0.5 * (X[,3]^2) + rnorm(n_samples, sd=0.1)
 
