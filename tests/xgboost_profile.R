@@ -16,9 +16,8 @@ model <- xgb.train(
   nrounds = 50,
   params = list(
     objective = "reg:squarederror",
-    eta = 0.01,
     base_score = mean(y),
-    max_depth = 3
+    max_depth = 2
   ),
   verbose = 0
 )

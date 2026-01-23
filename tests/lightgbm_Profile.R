@@ -10,7 +10,7 @@ set.seed(0)
 # 1) Data
 # --------------------------
 n_samples <- 1000
-p <- 100
+p <- 1000
 X <- matrix(runif(n_samples * p), n_samples, p)
 y <- X[,1] + 2 * X[,2] + 0.5 * (X[,3]^2) + rnorm(n_samples, sd=0.1)
 
@@ -19,12 +19,11 @@ dtrain <- lgb.Dataset(data = X, label = y)
 # --------------------------
 # 2) Train
 # --------------------------
-num_tree <- 50
+num_tree <- 50 
 params <- list(
   objective = "regression",
   metric = "l2",
-  learning_rate = 0.01,
-  max_depth = 3,
+  max_depth = 2,
   num_threads = 1,
   verbosity = -1
 )

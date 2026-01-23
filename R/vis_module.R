@@ -1,31 +1,23 @@
-#' Visualization utilities for Q-SHAP
-#' Requires: ggplot2, viridisLite, scales, shiny
-# install.packages(c("ggplot2","viridisLite","scales","shiny"))
-
-library(ggplot2)
-library(viridisLite)
-library(scales)
-
+#' Visualization module
+#' @export
 vis <- new.env(parent = emptyenv())
 
 # helper: pick a "matplotlib-like" palette name
-.vis_palette <- function(name = "Blues", n = 100) {
-  # viridisLite palettes: "viridis", "magma", "inferno", "plasma", "cividis", "turbo"
-  # We'll map "Blues" -> "cividis" (blue-ish) by default, but you can change.
-  pal <- switch(
-    tolower(name),
-    "blues"   = viridisLite::viridis(n),
-    "pubu"    = viridisLite::cividis(n),
-    "greens"  = viridisLite::viridis(n),
-    "reds"    = viridisLite::magma(n),
-    "pastel1" = hcl.colors(n, "Pastel 1"),
-    "pastel2" = hcl.colors(n, "Pastel 2"),
-    viridisLite::viridis(n)
-  )
-  pal
+.vis_palette <- function(name = "viridis", n = 256) {
+  nm <- tolower(name)
+  if (nm %in% c("viridis","magma","inferno","plasma","cividis","turbo")) {
+    return(viridisLite::viridis(n, option = nm))
+  }
+  if (nm %in% c("blues","greens","reds","purples","oranges")) {
+    return(grDevices::hcl.colors(n, palette = tools::toTitleCase(nm)))
+  }
+  if (nm %in% c("pastel1","pastel2")) {
+    return(grDevices::hcl.colors(n, palette = paste("Pastel", substr(nm, 7, 7))))
+  }
+  viridisLite::viridis(n)
 }
 
-#' Bar plot for Shapley R^2 (or any 1d contribution vector)
+# Bar plot for Shapley R^2 (or any 1d contribution vector)
 vis$rsq <- function(
   x,
   color_map_name = "Blues",
@@ -133,8 +125,8 @@ p <- ggplot(df, aes(x = feature, y = value)) +
   invisible(p)
 }
 
-#' Interactive loss explorer (like ipywidgets) using shiny
-#' loss: n x p matrix
+# Interactive loss explorer (like ipywidgets) using shiny
+# loss: n x p matrix
 vis$loss <- function(
   loss,
   save_ind = NULL,
@@ -201,7 +193,7 @@ vis$loss <- function(
   shiny::shinyApp(ui, server)
 }
 
-#' Elbow plot: top contributions (sorted)
+# Elbow plot: top contributions (sorted)
 vis$elbow <- function(
   x,
   xtitle = "Feature Number",
@@ -233,7 +225,7 @@ p <- ggplot(df, aes(x = k, y = value)) +
   invisible(sel)
 }
 
-#' Cumulative explained variance plot
+# Cumulative explained variance plot
 vis$cumu <- function(
   x,
   xtitle = "Feature Number",
@@ -272,7 +264,7 @@ p <- ggplot(df, aes(x = k, y = cumu)) +
   invisible(p)
 }
 
-#' Generalized correlation = sqrt(rsq contributions)
+# Generalized correlation = sqrt(rsq contributions)
 vis$gcorr <- function(
   x,
   color_map_name = "Blues",

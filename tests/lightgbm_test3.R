@@ -54,6 +54,8 @@ top_idx <- vis$elbow(rsq_contributions, max_comp = 15)
 # cumulative explained
 vis$cumu(rsq_contributions, max_comp = 15, save_name = "cumu_eg")
 
+
 # interactive loss explorer
 # (this launches a small shiny app)
-vis$loss(loss_matrix)
+rsq_contributions <- qshapr::qshap_rsq(explainer, X, y, loss=TRUE)
+vis$loss(rsq_contributions[[2]]

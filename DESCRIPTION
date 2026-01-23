@@ -11,7 +11,10 @@ Imports:
     Rcpp (>= 1.0.14),
     xgboost,
     lightgbm,
-    data.table
+    data.table,
+    viridisLite,
+    scales,
+    ggplot2
 LinkingTo: 
     Rcpp, 
     RcppEigen

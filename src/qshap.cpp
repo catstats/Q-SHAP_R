@@ -1,4 +1,8 @@
 #include "qshap.h"
+#include <complex>
+#include <vector>
+#include <cmath>
+#include <Eigen/Dense>
 
 #include <chrono>
 
@@ -21,10 +25,6 @@ Eigen::MatrixXd T2(
     const Eigen::MatrixXcd &store_z,
     bool parallel)
 {
-    double t_weight = 0.0;
-    double t_t2sample = 0.0;
-    double t_unpack = 0.0; // optional: overhead for w.first/w.second copies
-
     TreeSummary summary_tree = list_to_tree_summary(tree_summary);
 
     std::vector<double> init_prediction_vec;
@@ -47,11 +47,6 @@ Eigen::MatrixXd T2(
 
     return shap_value;
 }
-
-#include <complex>
-#include <vector>
-#include <cmath>
-#include <Eigen/Dense>
 
 // A much more optimized version of T2_sample
 void T2_sample(
