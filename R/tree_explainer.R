@@ -24,7 +24,23 @@ create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
   unlink(tmp)
 
   max_depth <- if (!is.null(tree_model$params$max_depth)) tree_model$params$max_depth else 6
-  base_score <- as.numeric(model_json$learner$learner_model_param$base_score)
+
+  # Extract base_score - handle various JSON formats
+  base_score_raw <- model_json$learner$learner_model_param$base_score
+  if (is.character(base_score_raw)) {
+    # Handle string format like "[-7.70459E-2]" or just a number string
+    base_score_raw <- gsub("\\[|\\]", "", base_score_raw)  # Remove brackets
+    base_score <- as.numeric(base_score_raw)
+  } else if (is.list(base_score_raw)) {
+    base_score <- as.numeric(base_score_raw[[1]])
+  } else {
+    base_score <- as.numeric(base_score_raw)
+  }
+  # Fallback to mean of predictions if still NA
+  if (is.na(base_score)) {
+    warning("Could not extract base_score from model, using 0.5 as default")
+    base_score <- 0.5
+  }
 
   # eta: try params first, else JSON
   eta <- tree_model$params$eta
