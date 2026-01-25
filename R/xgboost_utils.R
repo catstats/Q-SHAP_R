@@ -27,6 +27,11 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
   # XGBoost R uses 0-based indexing for iterationrange with exclusive end
   # c(0, 1) = tree 0 only, c(0, 2) = trees 0+1, etc.
   # Note: c(0, n) and c(1, n) are equivalent (both give trees 0 to n-1)
+  # also enable slicing by tree index
+
+  # XGBoost R uses 1-based indexing for model list !!!!
+  # https://xgboost.readthedocs.io/en/stable/tutorials/slicing_model.html
+
   for (i in seq_len(num_tree)) { # i is the 1-based loop index; tree index is i-1 (0-based)
   
     pb$tick()
@@ -39,25 +44,21 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
       
       # SHAP values for tree 0 only
       # iterationrange = c(0, 1) means tree 0 only (0-based, exclusive end)
-      shap_tree_i <- predict(model, x, predcontrib = TRUE, iterationrange = c(0, 1))
+      shap_tree_i <- predict(model[i], x, predcontrib = TRUE)
       T0_x_tree <- shap_tree_i[, -ncol(shap_tree_i), drop = FALSE]
     } else { # For subsequent trees (tree i-1 in 0-based indexing)
       # Calculate residual: y - prediction_from_trees_0_to_(i-2)
       # For tree i-1, we need prediction from trees 0 to i-2 (i.e., before tree i-1)
       # iterationrange = c(0, i-1) gives trees 0 to i-2
-      pred_partial <- predict(model, x, iterationrange = c(0, i - 1))
+      #  but we can directly do slicing !!
+      pred_partial <- predict(model[1:(i-1)], x)
       local_res <- y - pred_partial
       
-      # SHAP values for current tree (tree i-1 in 0-based)
-      # Marginal SHAP = cumulative SHAP up to tree i-1 minus cumulative SHAP up to tree i-2
-      # c(0, i) gives trees 0 to i-1
-      # c(0, i-1) gives trees 0 to i-2
-      shap_total_up_to_i <- predict(model, x, predcontrib = TRUE, iterationrange = c(0, i))
-      shap_total_up_to_i_minus_1 <- predict(model, x, predcontrib = TRUE, iterationrange = c(0, i - 1))
+      # SHAP values for current tree
+      shap_i <- predict(model[i], x, predcontrib = TRUE)
       
       # Marginal SHAP contribution of tree i-1 (remove bias columns)
-      T0_x_tree <- shap_total_up_to_i[, -ncol(shap_total_up_to_i), drop = FALSE] - 
-                   shap_total_up_to_i_minus_1[, -ncol(shap_total_up_to_i_minus_1), drop = FALSE]
+      T0_x_tree <- shap_i[, -ncol(shap_i), drop = FALSE]
     }
 
     
@@ -83,7 +84,7 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
 # Formats an xgboost model into a list of simple_tree objects
 # Becareful that this part is different from the Python version, we scale leaf weights here 
 #' @keywords internal
-xgb_formatter <- function(model_json, max_depth, eta = 1.0) {
+xgb_formatter <- function(model_json, max_depth) {
   # model_json can be:
   #  (1) a parsed list from jsonlite::fromJSON(..., simplifyVector = FALSE), or
   #  (2) a filename to a JSON model file, or

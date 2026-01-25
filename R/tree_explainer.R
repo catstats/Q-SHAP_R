@@ -23,7 +23,8 @@ create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
   model_json <- jsonlite::fromJSON(tmp, simplifyVector = FALSE)
   unlink(tmp)
 
-  max_depth <- if (!is.null(tree_model$params$max_depth)) tree_model$params$max_depth else 6
+  # For version 3.1.3.1 and later, we can get max_depth from attributes
+  max_depth <- if (!is.null(attributes(tree_model)$params$max_depth)) attributes(tree_model)$params$max_depth else 6
 
   # Extract base_score - handle various JSON formats
   base_score_raw <- model_json$learner$learner_model_param$base_score
@@ -43,16 +44,16 @@ create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
   }
 
   # eta: try params first, else JSON
-  eta <- tree_model$params$eta
-  if (is.null(eta)) {
-    # common JSON locations depending on xgboost build
-    eta <- model_json$learner$gradient_booster$gbtree_train_param$learning_rate
-    if (is.null(eta)) eta <- model_json$learner$gradient_booster$gbtree_train_param$eta
-  }
-  if (is.null(eta)) eta <- 0.3
-  eta <- as.numeric(eta)
+  # eta <- tree_model$params$eta
+  # if (is.null(eta)) {
+  #   # common JSON locations depending on xgboost build
+  #   eta <- model_json$learner$gradient_booster$gbtree_train_param$learning_rate
+  #   if (is.null(eta)) eta <- model_json$learner$gradient_booster$gbtree_train_param$eta
+  # }
+  # if (is.null(eta)) eta <- 0.3
+  # eta <- as.numeric(eta)
 
-  xgb_trees <- xgb_formatter(model_json, max_depth, eta)
+  xgb_trees <- xgb_formatter(model_json, max_depth)
 
   explainer <- structure(list(
     model = tree_model,

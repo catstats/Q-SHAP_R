@@ -54,17 +54,11 @@ cat("Model R^2 is:", model_rsq, "\n\n")
 max_depth = 2L
 nrounds = 50L
 
-dtrain <- xgb.DMatrix(data = X, label = y)
-
-model <- xgb.train(
-  data = dtrain,
+model <- xgboost(
+  X, y,
   nrounds = nrounds,
-  params = list(
-    objective = "reg:squarederror",
-    base_score = mean(y),
-    max_depth = max_depth
-  ),
-  verbose = 0
+  base_score = mean(y),
+  max_depth = max_depth,
 )
 
 ypred <- predict(model, X)
@@ -124,3 +118,4 @@ qshapr::vis$cumu(rsq_contributions, max_comp = 15, save_name = "cumu_eg")
 # interactive loss explorer
 # (this launches a small shiny app)
 vis$loss(rsq_cons[[2]])
+
