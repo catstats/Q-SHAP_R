@@ -24,36 +24,40 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
       clear = FALSE,
       width = 60
     )
-  # iterations are 1-based in xgboost predict
-  for (i in seq_len(num_tree)) { # i is the 1-based index of the current tree (round i)
+  # XGBoost R uses 0-based indexing for iterationrange with exclusive end
+  # c(0, 1) = tree 0 only, c(0, 2) = trees 0+1, etc.
+  # Note: c(0, n) and c(1, n) are equivalent (both give trees 0 to n-1)
+  for (i in seq_len(num_tree)) { # i is the 1-based loop index; tree index is i-1 (0-based)
   
     pb$tick()
 
     local_res <- NULL 
 
-    if (i == 1) { # For the first tree (round 1)
-      # substract null basedline
+    if (i == 1) { # For the first tree (tree 0 in 0-based indexing)
+      # Residual before first tree: y - base_score
       local_res <- y - base_score
       
-      # SHAP values for the first tree (round 1 only)
-      # iterationrange = c(1, 2) means use tree from round 1 up to (but not including) round 2. So, only round 1.
-      shap_round_1_cumulative <- predict(model, x, predcontrib = TRUE, iterationrange = c(1, 2))
-      T0_x_tree <- shap_round_1_cumulative[, -ncol(shap_round_1_cumulative), drop = FALSE]
-    } else { # For subsequent trees (round i, where i > 1)
-      # Calculate residual: y - prediction_from_rounds_1_to_(i-1)
-      # iterationrange = c(1, i) means use trees from round 1 up to (but not including) round i. So, rounds 1 to i-1.
-      pred_partial <- predict(model, x, iterationrange = c(1, i))
+      # SHAP values for tree 0 only
+      # iterationrange = c(0, 1) means tree 0 only (0-based, exclusive end)
+      shap_tree_i <- predict(model, x, predcontrib = TRUE, iterationrange = c(0, 1))
+      T0_x_tree <- shap_tree_i[, -ncol(shap_tree_i), drop = FALSE]
+    } else { # For subsequent trees (tree i-1 in 0-based indexing)
+      # Calculate residual: y - prediction_from_trees_0_to_(i-2)
+      # For tree i-1, we need prediction from trees 0 to i-2 (i.e., before tree i-1)
+      # iterationrange = c(0, i-1) gives trees 0 to i-2
+      pred_partial <- predict(model, x, iterationrange = c(0, i - 1))
       local_res <- y - pred_partial
       
-      # SHAP values for current tree (round i)
-      # SHAP from rounds 1 to i: iterationrange = c(1, i + 1)
-      shap_total_up_to_round_i <- predict(model, x, predcontrib = TRUE, iterationrange = c(1, i + 1))
-      # SHAP from rounds 1 to i-1: iterationrange = c(1, i)
-      shap_total_up_to_round_i_minus_1 <- predict(model, x, predcontrib = TRUE, iterationrange = c(1, i))
+      # SHAP values for current tree (tree i-1 in 0-based)
+      # Marginal SHAP = cumulative SHAP up to tree i-1 minus cumulative SHAP up to tree i-2
+      # c(0, i) gives trees 0 to i-1
+      # c(0, i-1) gives trees 0 to i-2
+      shap_total_up_to_i <- predict(model, x, predcontrib = TRUE, iterationrange = c(0, i))
+      shap_total_up_to_i_minus_1 <- predict(model, x, predcontrib = TRUE, iterationrange = c(0, i - 1))
       
-      # Marginal SHAP contribution of tree i (remove bias columns)
-      T0_x_tree <- shap_total_up_to_round_i[, -ncol(shap_total_up_to_round_i), drop = FALSE] - 
-                   shap_total_up_to_round_i_minus_1[, -ncol(shap_total_up_to_round_i_minus_1), drop = FALSE]
+      # Marginal SHAP contribution of tree i-1 (remove bias columns)
+      T0_x_tree <- shap_total_up_to_i[, -ncol(shap_total_up_to_i), drop = FALSE] - 
+                   shap_total_up_to_i_minus_1[, -ncol(shap_total_up_to_i_minus_1), drop = FALSE]
     }
 
     
@@ -124,8 +128,9 @@ xgb_formatter <- function(model_json, max_depth, eta = 1.0) {
   for (i in seq_along(trees_data)) {
     tr <- trees_data[[i]]
 
+    # base_weights in XGBoost JSON are already the final tree outputs (eta-scaled during training)
+    # Do NOT scale again here - the values are ready to use as-is
     base_w <- as.numeric(unlist(tr$base_weights))
-    base_w <- base_w * eta
 
     out[[i]] <- simple_tree(
       children_left  = as.integer(unlist(tr$left_children)),
