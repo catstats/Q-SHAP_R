@@ -20,10 +20,10 @@ storage.mode(X) <- "double"
 cat("X dim:", paste(dim(X), collapse=" x "), "\n")
 cat("y len:", length(y), "\n")
 
-max_depth    <- 7L
+max_depth    <- 2L
 n_estimators <- 50L
 
-dtrain <- lgb.Dataset(data = X, label = y)
+dtrain <- lgb.Dataset(data = X, label = y) 
 
 params <- list(
   objective = "regression",
@@ -44,20 +44,20 @@ model_rsq <- 1 - sse / sst
 
 t0 <- proc.time()
 explainer <- qshapr::create_tree_explainer(model)
-rsq_contributions <- qshapr::qshap_rsq(explainer, X, y)
+rsq_contributions <- qshapr::qshap_rsq(explainer, X, y))
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 cat("Q-SHAP R^2 sum:", sum(rsq_contributions), "\n")
 cat("Model R^2 is:", model_rsq, "\n\n")
 
 ## xgboost test
-max_depth = 2L
+max_depth = 5L
 nrounds = 50L
 
 model <- xgboost(
   X, y,
   nrounds = nrounds,
-  base_score = mean(y),
+  learning_rate = 0.1,
   max_depth = max_depth,
 )
 
@@ -68,7 +68,8 @@ model_rsq <- 1 - sse / sst
 
 t0 <- proc.time()
 explainer <- qshapr::create_tree_explainer(model)
-rsq_cons <- qshapr::qshap_rsq(explainer, X, y, loss=TRUE)
+# parallel computation with 10 cores (would be useful if n_samples is large or depth is high)
+rsq_cons <- qshapr::qshap_rsq(explainer, X, y, loss=TRUE, ncore = 10)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 rsq_contributions <- rsq_cons[[1]]

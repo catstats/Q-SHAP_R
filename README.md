@@ -14,7 +14,7 @@ pip install qshap
 
 ## Quick Start
 
-```python
+```R
 # Import necessary libraries
 from sklearn.datasets import fetch_california_housing
 from qshap import gazer, vis

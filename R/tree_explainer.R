@@ -1,5 +1,7 @@
 #' @import Rcpp
 #' @importFrom methods new
+#' @importFrom parallel makeCluster stopCluster detectCores
+#' @importFrom parallel clusterEvalQ clusterExport parLapply
 #' @useDynLib qshapr, .registration = TRUE
 NULL
 
@@ -113,9 +115,10 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
   )
 }
 
-#' @export 
+ #' @export 
 qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
-                      nfrac = NULL, random_state = 42) {
+                      nfrac = NULL, random_state = 42,
+                      ncore = 1L) {
   # Sampling logic
   if (!is.null(nsample)) {
     if (nsample <= 0 || nsample >= nrow(x)) {
@@ -139,15 +142,66 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
   y_mean_ori <- mean(y)
   sst <- sum((y - y_mean_ori)^2)
 
-  # Calculate loss
-  loss <- qshap_loss(explainer, x, y, y_mean_ori)
+  # Parallel if number of samples is large enough
+  # Normalize ncore
+  if (is.null(ncore) || length(ncore) != 1 || is.na(ncore)) ncore <- 1L
+  ncore <- as.integer(ncore)
+  max_core <- parallel::detectCores(logical = TRUE)
+  if (is.na(max_core) || max_core < 1) max_core <- 1L
+  if (ncore == -1L) ncore <- max_core
+  ncore <- max(1L, min(max_core, ncore))
 
-  # Calculate R-squared
-  rsq <- -colSums(loss) / sst
+  n <- nrow(x)
+
+  # Calculate loss (serial)
+  if (ncore == 1L || n <= 1L) {
+    loss <- qshap_loss(explainer, x, y, y_mean_ori)
+    rsq <- -colSums(loss) / sst
+    if (loss_out) {
+      return(list(rsq = rsq, loss = loss))
+    } else {
+      return(rsq)
+    }
+  }
+
+  # Divide indices into ncore chunks (preserve order)
+  idx_chunks <- split(seq_len(n), cut(seq_len(n), breaks = ncore, labels = FALSE))
+
+  # Parallel compute using PSOCK cluster (CRAN/Windows friendly)
+  cl <- parallel::makeCluster(ncore)
+  on.exit(parallel::stopCluster(cl), add = TRUE)
+
+  # Ensure package namespace is available on workers
+  parallel::clusterEvalQ(cl, suppressPackageStartupMessages(library(qshapr)))
+
+  # Export needed data once (avoid resending for every task)
+  parallel::clusterExport(
+    cl,
+    varlist = c("x", "y", "explainer", "y_mean_ori", "idx_chunks", "loss_out"),
+    envir = environment()
+  )
+
+  worker <- function(idx) {
+    # compute loss for this chunk
+    lc <- qshapr::qshap_loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
+    if (loss_out) {
+      lc
+    } else {
+      colSums(lc)
+    }
+  }
+
+  results <- parallel::parLapply(cl, idx_chunks, worker)
 
   if (loss_out) {
+    # Combine full loss matrix (row-bind like np.concatenate(axis=0))
+    loss <- do.call(rbind, results)
+    rsq <- -colSums(loss) / sst
     return(list(rsq = rsq, loss = loss))
   } else {
+    # Combine by summing column-sums (memory efficient)
+    loss_sum <- Reduce(`+`, results)
+    rsq <- -loss_sum / sst
     return(rsq)
   }
 }
