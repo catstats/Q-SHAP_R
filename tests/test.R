@@ -5,6 +5,7 @@ suppressPackageStartupMessages({
   library(xgboost)
   library(qshapr)
   library(ggplot2)
+  library(ggrepel)
 })
 
 X <- as.matrix(fread("tests/X_data.csv", header = TRUE))
@@ -14,6 +15,20 @@ set.seed(0)
 n_samples <- 1000
 n_features <- 1000
 n_informative <- 5
+
+
+
+# Simulate data: only first n_informative features affect y
+X <- matrix(rnorm(n_samples * n_features), nrow = n_samples, ncol = n_features)
+
+beta <- numeric(n_features)
+beta[1:n_informative] <- runif(n_informative, min = 1.0, max = 2.0)
+
+signal <- X %*% beta
+y <- as.numeric(signal + rnorm(n_samples, sd = 0.5))
+
+cat("Simulated data with", n_informative, "informative features.\n")
+
 
 storage.mode(X) <- "double"
 
@@ -44,21 +59,21 @@ model_rsq <- 1 - sse / sst
 
 t0 <- proc.time()
 explainer <- qshapr::create_tree_explainer(model)
-rsq_contributions <- qshapr::qshap_rsq(explainer, X, y))
+rsq_contributions <- qshapr::qshap_rsq(explainer, X, y)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 cat("Q-SHAP R^2 sum:", sum(rsq_contributions), "\n")
 cat("Model R^2 is:", model_rsq, "\n\n")
 
 ## xgboost test
-max_depth = 5L
+max_depth = 2L
 nrounds = 50L
 
 model <- xgboost(
   X, y,
   nrounds = nrounds,
   learning_rate = 0.1,
-  max_depth = max_depth,
+  max_depth = max_depth
 )
 
 ypred <- predict(model, X)
@@ -104,19 +119,18 @@ qshapr::vis$rsq(rsq_contributions, color_map_name = "viridis")
 qshapr::vis$rsq(rsq_contributions, color_map_name = "inferno")
 
 # custom labels
-feature_names <- paste0("feature", seq_along(rsq_contributions))
+feature_names <- paste0("f", seq_along(rsq_contributions))
 qshapr::vis$rsq(rsq_contributions, label = feature_names, rotation = 45)
 
 # horizontal plot and save
 qshapr::vis$rsq(rsq_contributions, horizontal = TRUE, model_rsq = FALSE, max_feature = 15, save_name = "rsq_eg")
 
 # elbow plot
-top_idx <- vis$elbow(rsq_contributions, max_comp = 15)
+top_idx <- qshapr::vis$elbow(rsq_contributions, max_comp = 15, label=feature_names)
 
 # cumulative explained
 qshapr::vis$cumu(rsq_contributions, max_comp = 15, save_name = "cumu_eg")
 
 # interactive loss explorer
 # (this launches a small shiny app)
-vis$loss(rsq_cons[[2]])
-
+qshapr::vis$loss(rsq_cons[[2]])

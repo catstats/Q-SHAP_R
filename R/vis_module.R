@@ -17,6 +17,20 @@ vis <- new.env(parent = emptyenv())
   viridisLite::viridis(n)
 }
 
+# helper: ensure palette maps low->light and high->dark (so large values are darker)
+.vis_high_dark <- function(pal) {
+  if (length(pal) < 2) return(pal)
+  lum <- function(col) {
+    rgb <- grDevices::col2rgb(col) / 255
+    # relative luminance (WCAG)
+    0.2126 * rgb[1, ] + 0.7152 * rgb[2, ] + 0.0722 * rgb[3, ]
+  }
+  l1 <- lum(pal[1])
+  lN <- lum(pal[length(pal)])
+  # if palette goes dark->light (end is lighter), reverse it
+  if (lN > l1) rev(pal) else pal
+}
+
 # Bar plot for Shapley R^2 (or any 1d contribution vector)
 vis$rsq <- function(
   x,
@@ -51,7 +65,7 @@ vis$rsq <- function(
     if (length(label) != length(x)) stop("label length must match x length.")
     sorted_label <- as.character(label[ord])
   } else {
-    sorted_label <- as.character(ord - 1L)  # mimic python: feature index
+    sorted_label <- as.character(ord)  # default: 1-based feature index (R style)
   }
 
   df <- data.frame(
@@ -69,41 +83,30 @@ vis$rsq <- function(
     df$val_norm <- (df$value - rng[1]) / diff(rng)
   }
 
-  pal <- .vis_palette(color_map_name, n = 256)
+  # ensure larger values map to darker colors, independent of palette direction
+  pal <- .vis_high_dark(.vis_palette(color_map_name, n = 256))
   df$fill <- pal[pmax(1, pmin(256, 1 + floor(df$val_norm * 255)))]
 
   # label text
   df$txt <- formatC(df$value, format = "f", digits = decimal)
 
-  # base plot no grid
-
-p <- ggplot(df, aes(x = feature, y = value)) +
+  # publication-ready plot
+  p <- ggplot(df, aes(x = feature, y = value)) +
     geom_col(aes(fill = fill), width = 0.8, show.legend = FALSE) +
     scale_fill_identity() +
+    scale_y_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.08))) +
     labs(title = title, x = xtitle, y = ytitle) +
-    theme_minimal(base_size = 12) +
+    theme_classic(base_size = 12) +
     theme(
-        axis.text.x = element_text(angle = rotation, hjust = 1, vjust = 1),
-         panel.grid = element_blank(),
-         axis.line = element_line(color = "black")
+      plot.title = element_text(face = "bold", hjust = 0),
+      axis.title = element_text(face = "bold"),
+      axis.text.x = element_text(angle = if (!horizontal) rotation else 0, hjust = 1, vjust = 1),
+      axis.text.y = element_text(angle = if (horizontal) rotation else 0, hjust = 1, vjust = 0.5),
+      panel.grid.major.y = element_line(color = "grey85"),
+      panel.grid.minor = element_blank()
     )
 
-  # add value labels
-  # (offset like python: 2% max)
-  offset <- max(df$value, na.rm = TRUE) * 0.02
-p <- ggplot(df, aes(x = feature, y = value)) +
-    geom_col(aes(fill = fill), width = 0.8, show.legend = FALSE) +
-    scale_fill_identity() +
-    labs(title = title, x = xtitle, y = ytitle) +
-    theme_minimal(base_size = 12) +
-    theme(
-        panel.grid = element_blank(),
-        axis.line = element_line(color = "black"),
-        axis.text.x = element_text(angle = if (!horizontal) rotation else 0, hjust = 1, vjust = 1),
-        axis.text.y = element_text(angle = if (horizontal) rotation else 0, hjust = 1, vjust = 0.5)
-    )
-
-    if (horizontal) p <- p + coord_flip()
+  if (horizontal) p <- p + coord_flip()
 
   # add model rsq annotation
   if (model_rsq) {
@@ -135,7 +138,7 @@ vis$loss <- function(
   color_map_name = "Blues",
   model_rsq = FALSE,
   decimal = 0,
-  xtitle = "Feature Index",
+  xtitle = "Feature index (1-based)",
   ytitle = "Loss"
 ) {
   loss <- as.matrix(loss)
@@ -196,10 +199,13 @@ vis$loss <- function(
 # Elbow plot: top contributions (sorted)
 vis$elbow <- function(
   x,
-  xtitle = "Feature Number",
+  xtitle = "Top-k features",
   ytitle = "Explained Variance",
   max_comp = 10,
-  title = "Explained Variance by Top Features"
+  title = "Explained Variance by Top Features",
+  label = NULL,
+  rotation = 0,
+  point_color = "black"
 ) {
   x <- as.numeric(x)
   max_comp <- min(as.integer(max_comp), length(x))
@@ -208,17 +214,30 @@ vis$elbow <- function(
   sel <- ord[seq_len(max_comp)]
   vals <- x[sel]
 
+  # optional labels for selected features (must match length of x)
+  if (!is.null(label)) {
+    if (length(label) != length(x)) stop("label length must match x length.")
+    tick_lab <- as.character(label[sel])
+  } else {
+    # default: show feature indices (R: 1-based)
+    tick_lab <- as.character(sel)
+  }
+
   df <- data.frame(k = seq_len(max_comp), value = vals)
 
-p <- ggplot(df, aes(x = k, y = value)) +
-    geom_line(linetype = "dashed") +
-    geom_point() +
-    scale_x_continuous(breaks = seq_len(max_comp)) +
+  p <- ggplot(df, aes(x = k, y = value, group = 1)) +
+    geom_line(linewidth = 0.8, color = point_color) +
+    geom_point(size = 2.2, color = point_color) +
+    scale_x_continuous(breaks = seq_len(max_comp), labels = tick_lab) +
+    scale_y_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.08))) +
     labs(title = title, x = xtitle, y = ytitle) +
-    theme_minimal(base_size = 12) +
+    theme_classic(base_size = 12) +
     theme(
-         panel.grid = element_blank(),
-        axis.line = element_line(color = "black")
+      plot.title = element_text(face = "bold", hjust = 0),
+      axis.title = element_text(face = "bold"),
+      axis.text.x = element_text(angle = rotation, hjust = 1, vjust = 1),
+      panel.grid.major.y = element_line(color = "grey85"),
+      panel.grid.minor = element_blank()
     )
 
   print(p)
@@ -228,10 +247,15 @@ p <- ggplot(df, aes(x = k, y = value)) +
 # Cumulative explained variance plot
 vis$cumu <- function(
   x,
-  xtitle = "Feature Number",
+  xtitle = "Top-k features",
   ytitle = "Cumulative Explained Variance",
   title = "Cumulative Explained Variance by Top Features",
   max_comp = 10,
+  label = NULL,
+  rotation = 0,
+  inc_threshold = 0.01,
+  label_size = 3,
+  main_color = "black",
   save_name = NULL
 ) {
   x <- as.numeric(x)
@@ -239,21 +263,83 @@ vis$cumu <- function(
 
   max_comp <- min(as.integer(max_comp), length(x))
   ord <- order(x, decreasing = TRUE)
-  vals <- x[ord][seq_len(max_comp)]
+  sel <- ord[seq_len(max_comp)]
+  vals <- x[sel]
   cumu <- cumsum(vals)
 
-  df <- data.frame(k = seq_len(max_comp), cumu = cumu)
+  # include a (0,0) start point for the cumulative curve (but don't label 0 on x-axis)
+  df <- data.frame(k = c(0, seq_len(max_comp)), cumu = c(0, cumu))
 
-p <- ggplot(df, aes(x = k, y = cumu)) +
-    geom_line() +
-    geom_point() +
-    geom_hline(yintercept = r2, linetype = "dashed") +
-    scale_x_continuous(breaks = seq_len(max_comp)) +
+  # optional labels for selected features (must match length of x)
+  if (!is.null(label)) {
+    if (length(label) != length(x)) stop("label length must match x length.")
+    tick_lab <- as.character(label[sel])
+  } else {
+    # default: show feature indices (R: 1-based)
+    tick_lab <- as.character(sel)
+  }
+  # per-step increases between points (k-1 -> k)
+  df_step <- data.frame(
+    k = seq_len(max_comp),
+    y0 = c(0, cumu[seq_len(max_comp - 1L)]),
+    y1 = cumu,
+    inc = vals,
+    feat = tick_lab
+  )
+  df_step$lab <- paste0(df_step$feat, ": +", formatC(df_step$inc, format = "f", digits = 3))
+  df_step_show <- df_step[is.finite(df_step$inc) & (df_step$inc >= inc_threshold), , drop = FALSE]
+
+  p <- ggplot(df, aes(x = k, y = cumu, group = 1)) +
+    # per-feature increment: vertical arrowed dashed line (only for sufficiently large gains)
+    geom_segment(
+      data = df_step_show,
+      aes(x = k, xend = k, y = y0, yend = y1),
+      inherit.aes = FALSE,
+      arrow = grid::arrow(length = grid::unit(0.18, "cm")),
+      linetype = "dashed",
+      linewidth = 0.7,
+      color = "grey60",
+      alpha = 0.95
+    ) +
+    # label to the right of the arrow, centered on the segment
+    geom_text(
+      data = df_step_show,
+      aes(x = k + 0.18, y = (y0 + y1) / 2, label = lab),
+      inherit.aes = FALSE,
+      hjust = 0,
+      vjust = 0.5,
+      size = label_size,
+      color = "grey35",
+      check_overlap = TRUE
+    ) +
+    geom_line(linewidth = 0.9, color = main_color) +
+    geom_point(size = 2.4, color = main_color) +
+    # total R² reference (dashed) + label
+    geom_hline(yintercept = r2, linetype = "dashed", linewidth = 0.7, color = "grey40") +
+    geom_text(
+      data = data.frame(x = max_comp, y = r2, lab = paste0("Total R²: ", formatC(r2, format = "f", digits = 3))),
+      aes(x = x, y = y, label = lab),
+      inherit.aes = FALSE,
+      hjust = 1,
+      vjust = -0.6,
+      size = 4,
+      fontface = "bold"
+    ) +
+    scale_x_continuous(
+      breaks = seq_len(max_comp),
+      labels = as.character(seq_len(max_comp)),
+      limits = c(0, max_comp),
+      expand = ggplot2::expansion(mult = c(0.01, 0.02))
+    ) +
+    scale_y_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.08))) +
     labs(title = title, x = xtitle, y = ytitle) +
-    theme_minimal(base_size = 12) +
+    theme_classic(base_size = 12) +
     theme(
-            panel.grid = element_blank(),
-            axis.line = element_line(color = "black")
+      plot.title = element_text(face = "bold", hjust = 0),
+      axis.title = element_text(face = "bold"),
+      axis.text.x = element_text(angle = rotation, hjust = 1, vjust = 1),
+      panel.grid.major.y = element_line(color = "grey85"),
+      panel.grid.minor = element_blank()
     )
 
   if (!is.null(save_name)) {
@@ -272,7 +358,7 @@ vis$gcorr <- function(
   max_feature = 10,
   cutoff = 0,
   title = "Generalized Correlation of Features to the Outcome",
-  xtitle = "Feature index",
+  xtitle = "Feature index (1-based)",
   ytitle = "Generalized Correlation",
   rotation = 0,
   label = NULL,
