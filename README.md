@@ -70,9 +70,16 @@ explainer <- create_tree_explainer(model)
 # Calculate feature-specific R^2 values
 phi_rsq <- qshap_rsq(explainer, X_sample, y_sample)
 
+# Calculate model R^2 for verification
+ypred <- predict(model, as.matrix(X_sample))
+sst <- sum((y_sample - mean(y_sample))^2)
+sse <- sum((y_sample - ypred)^2)
+model_rsq <- 1 - sse/sst
+
 # Print R^2 values for each feature
 print(phi_rsq)
 print(paste("Total R^2:", sum(phi_rsq)))
+print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize feature-specific R^2
 vis$rsq(
@@ -125,9 +132,16 @@ explainer <- create_tree_explainer(lgb_model)
 # Calculate feature-specific R^2 values
 phi_rsq <- qshap_rsq(explainer, X, y)
 
+# Calculate model R^2 for verification
+ypred <- predict(lgb_model, X)
+sst <- sum((y - mean(y))^2)
+sse <- sum((y - ypred)^2)
+model_rsq <- 1 - sse/sst
+
 # Print results
 print(phi_rsq)
 print(paste("Total R^2:", round(sum(phi_rsq), 4)))
+print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize
 vis$rsq(
