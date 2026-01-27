@@ -115,10 +115,79 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
   )
 }
 
- #' @export 
+#' Validate R² Sum Against Model R²
+#' @keywords internal
+validate_rsq_sum <- function(explainer, x, y, rsq, sst, y_mean_ori, tolerance) {
+  # Get model predictions
+  if (inherits(explainer, "xgboost_explainer")) {
+    # For XGBoost models
+    y_pred <- predict(explainer$model, as.matrix(x))
+  } else if (inherits(explainer, "lightgbm_explainer")) {
+    # For LightGBM models
+    y_pred <- predict(explainer$model, x)
+  } else {
+    # Unknown model type - skip validation
+    return(invisible(NULL))
+  }
+  
+  # Calculate actual model R²
+  sse <- sum((y - y_pred)^2)
+  model_rsq <- 1 - sse / sst
+  
+  # Calculate sum of Q-SHAP R² contributions
+  qshap_rsq_sum <- sum(rsq)
+  
+  # Check if they match within tolerance
+  diff <- abs(qshap_rsq_sum - model_rsq)
+  
+  if (diff > tolerance) {
+    warning(
+      sprintf(
+        "Model R² validation check failed:\n  Model R²: %.10f\n  Q-SHAP R² sum: %.10f\n  Difference: %.10e (tolerance: %.1e)\n  This may indicate numerical precision issues or an implementation bug.",
+        model_rsq, qshap_rsq_sum, diff, tolerance
+      ),
+      call. = FALSE
+    )
+  }
+  
+  invisible(NULL)
+}
+
+#' Calculate Feature-Specific R² Values Using Q-SHAP
+#'
+#' This function computes feature-specific R² values using Shapley decomposition 
+#' of the total R² for tree ensembles. The sum of all feature-specific R² values 
+#' should equal the model's overall R².
+#'
+#' @param explainer A Q-SHAP tree explainer created with \code{create_tree_explainer}
+#' @param x Feature matrix or data frame
+#' @param y Target variable vector
+#' @param loss_out Logical; if TRUE, returns both R² values and loss matrix (default: FALSE)
+#' @param nsample Integer; number of samples to use (default: NULL, uses all samples)
+#' @param nfrac Numeric; fraction of samples to use between 0 and 1 (default: NULL)
+#' @param random_state Integer; random seed for sampling (default: 42)
+#' @param ncore Integer; number of cores for parallel processing. Use -1 for all available cores (default: 1)
+#' @param check_model_rsq Logical; if TRUE, validates that sum of Q-SHAP R² equals model R² (default: TRUE)
+#' @param tolerance Numeric; tolerance for R² validation check (default: 1e-6)
+#'
+#' @return If \code{loss_out = FALSE}, returns a numeric vector of feature-specific R² values.
+#'   If \code{loss_out = TRUE}, returns a list with components:
+#'   \item{rsq}{Numeric vector of feature-specific R² values}
+#'   \item{loss}{Matrix of loss values for each observation and feature}
+#'
+#' @details
+#' The function calculates feature-specific contributions to the model's R² using the 
+#' Q-SHAP algorithm. By default, it validates that the sum of feature-specific R² values 
+#' matches the model's actual R² within a specified tolerance. If the validation fails, 
+#' a warning is issued.
+#'
+#' The validation can be disabled by setting \code{check_model_rsq = FALSE}, or the 
+#' tolerance can be adjusted using the \code{tolerance} parameter.
+#'
+#' @export 
 qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
                       nfrac = NULL, random_state = 42,
-                      ncore = 1L) {
+                      ncore = 1L, check_model_rsq = TRUE, tolerance = 1e-6) {
   # Sampling logic
   if (!is.null(nsample)) {
     if (nsample <= 0 || nsample >= nrow(x)) {
@@ -157,6 +226,12 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
   if (ncore == 1L || n <= 1L) {
     loss <- qshap_loss(explainer, x, y, y_mean_ori)
     rsq <- -colSums(loss) / sst
+    
+    # Validate R² sum against model R² if requested
+    if (check_model_rsq) {
+      validate_rsq_sum(explainer, x, y, rsq, sst, y_mean_ori, tolerance)
+    }
+    
     if (loss_out) {
       return(list(rsq = rsq, loss = loss))
     } else {
@@ -197,11 +272,23 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
     # Combine full loss matrix (row-bind like np.concatenate(axis=0))
     loss <- do.call(rbind, results)
     rsq <- -colSums(loss) / sst
+    
+    # Validate R² sum against model R² if requested
+    if (check_model_rsq) {
+      validate_rsq_sum(explainer, x, y, rsq, sst, y_mean_ori, tolerance)
+    }
+    
     return(list(rsq = rsq, loss = loss))
   } else {
     # Combine by summing column-sums (memory efficient)
     loss_sum <- Reduce(`+`, results)
     rsq <- -loss_sum / sst
+    
+    # Validate R² sum against model R² if requested
+    if (check_model_rsq) {
+      validate_rsq_sum(explainer, x, y, rsq, sst, y_mean_ori, tolerance)
+    }
+    
     return(rsq)
   }
 }
