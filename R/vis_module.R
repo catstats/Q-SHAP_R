@@ -1,4 +1,17 @@
-#' Visualization module
+#' Visualization Module for Q-SHAP Results
+#' 
+#' An environment containing visualization functions for Q-SHAP results.
+#' Access functions using \code{vis$rsq()}, \code{vis$elbow()}, etc.
+#' 
+#' @format An environment with visualization functions:
+#' \describe{
+#'   \item{rsq}{Bar plot of feature-specific R-squared values}
+#'   \item{elbow}{Elbow plot showing top contributing features}
+#'   \item{cumu}{Cumulative explained variance plot}
+#'   \item{gcorr}{Generalized correlation plot (square root of R-squared)}
+#'   \item{loss}{Interactive loss explorer (requires shiny)}
+#' }
+#' 
 #' @export
 vis <- new.env(parent = emptyenv())
 

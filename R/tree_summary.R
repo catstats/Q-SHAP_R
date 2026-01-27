@@ -1,5 +1,6 @@
 
 #' Simple Tree Structure
+#' @keywords internal
 simple_tree <- function(children_left,
                         children_right,
                         feature,
@@ -21,6 +22,7 @@ simple_tree <- function(children_left,
 }
 
 #' Tree Summary Structure
+#' @keywords internal
 tree_summary <- function(children_left,
                          children_right,
                          feature,
