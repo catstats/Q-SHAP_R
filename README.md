@@ -140,6 +140,22 @@ vis$rsq(
 
 ## Advanced Usage
 
+### Model R² Validation
+
+By default, `qshap_rsq` validates that the sum of feature-specific R² contributions matches the model's actual R². This helps catch potential numerical issues or implementation bugs:
+
+```r
+# Default behavior includes validation
+phi_rsq <- qshap_rsq(explainer, X, y)
+# Warning will be issued if R² sum doesn't match model R² within tolerance
+
+# Disable validation if needed
+phi_rsq <- qshap_rsq(explainer, X, y, check_model_rsq = FALSE)
+
+# Adjust tolerance for validation (default: 1e-6)
+phi_rsq <- qshap_rsq(explainer, X, y, tolerance = 1e-8)
+```
+
 ### Parallel Processing
 
 For large datasets, use parallel processing to speed up calculations:
