@@ -78,7 +78,7 @@ model_rsq <- 1 - sse/sst
 
 # Print R^2 values for each feature
 print(phi_rsq)
-print(paste("Total R^2:", sum(phi_rsq)))
+print(paste("Total R^2:", round(sum(phi_rsq), 4)))
 print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize feature-specific R^2
