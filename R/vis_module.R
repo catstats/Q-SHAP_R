@@ -45,6 +45,7 @@ vis$rsq <- function(
   rotation = 0,
   label = NULL,
   decimal = 3,
+  show_value = TRUE,
   save_name = NULL
 ) {
   x <- as.numeric(x)
@@ -90,11 +91,33 @@ vis$rsq <- function(
   # label text
   df$txt <- formatC(df$value, format = "f", digits = decimal)
 
+  # add numeric labels on bars
+  if (isTRUE(show_value)) {
+    if (!horizontal) {
+      # label above the bar
+      p_label_layer <- geom_text(
+        aes(label = txt),
+        vjust = -0.35,
+        size = 3.6,
+        fontface = "plain"
+      )
+    } else {
+      # after coord_flip(), x/y swap; use hjust to place label to the right of the bar
+      p_label_layer <- geom_text(
+        aes(label = txt),
+        hjust = -0.15,
+        size = 3.6,
+        fontface = "plain"
+      )
+    }
+  }
+
   # publication-ready plot
   p <- ggplot(df, aes(x = feature, y = value)) +
     geom_col(aes(fill = fill), width = 0.8, show.legend = FALSE) +
     scale_fill_identity() +
-    scale_y_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.08))) +
+    { if (isTRUE(show_value)) p_label_layer else NULL } +
+    scale_y_continuous(expand = ggplot2::expansion(mult = c(0.02, 0.14))) +
     labs(title = title, x = xtitle, y = ytitle) +
     theme_classic(base_size = 12) +
     theme(
@@ -106,7 +129,12 @@ vis$rsq <- function(
       panel.grid.minor = element_blank()
     )
 
-  if (horizontal) p <- p + coord_flip()
+  if (horizontal) {
+    p <- p + coord_flip(clip = "off")
+  } else {
+    # allow labels to extend slightly above the panel
+    p <- p + coord_cartesian(clip = "off")
+  }
 
   # add model rsq annotation
   if (model_rsq) {
@@ -121,7 +149,7 @@ vis$rsq <- function(
   }
 
   if (!is.null(save_name)) {
-    ggsave(filename = paste0(save_name, ".pdf"), plot = p, width = 7, height = 4)
+    ggsave(filename = paste0(save_name, ".pdf"), plot = p, width = 7, height = 4.2)
   }
 
   print(p)
