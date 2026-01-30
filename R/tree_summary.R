@@ -1,49 +1,5 @@
-
-#' Simple Tree Structure
-#' @keywords internal
-simple_tree <- function(children_left,
-                        children_right,
-                        feature,
-                        threshold,
-                        max_depth,
-                        n_node_samples,
-                        value,
-                        node_count) {
-  structure(list(
-    children_left   = children_left,
-    children_right  = children_right,
-    feature         = feature,
-    threshold       = threshold,
-    max_depth       = max_depth,
-    n_node_samples  = n_node_samples,
-    value           = value,
-    node_count      = node_count
-  ), class = "simple_tree")
-}
-
-#' Tree Summary Structure
-#' @keywords internal
-tree_summary <- function(children_left,
-                         children_right,
-                         feature,
-                         feature_uniq,
-                         threshold,
-                         max_depth,
-                         sample_weight,
-                         init_prediction,
-                         node_count) {
-  structure(list(
-    children_left   = children_left,
-    children_right  = children_right,
-    feature         = feature,
-    feature_uniq    = feature_uniq,
-    threshold       = threshold,
-    max_depth       = max_depth,
-    sample_weight   = sample_weight,
-    init_prediction = init_prediction,
-    node_count      = node_count
-  ), class = "tree_summary")
-}
+# Note: simple_tree and tree_summary constructors are now defined in classes.R
+# This file retains the summarize_tree function that uses those constructors
 
 # Summarize tree function - converts simple_tree to tree_summary
 #' @keywords internal
