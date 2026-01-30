@@ -30,6 +30,7 @@ devtools::install_github("catstats/Q-SHAP_R")
 # Load required libraries
 library(xgboost)
 library(qshapr)
+library(ggplot2)
 
 # Load the California Housing dataset
 url <- "https://raw.githubusercontent.com/ageron/handson-ml2/master/datasets/housing/housing.csv"
