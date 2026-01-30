@@ -1,6 +1,6 @@
 # qshapr: Feature-Specific $R^2$ Values for Boosting Trees in R
 
-This R package computes feature-specific $R^2$ values using Shapley decomposition of the total $R^2$ for tree ensembles in polynomial time based on the [paper](https://arxiv.org/abs/2407.03515).
+This R package computes feature-specific $R^2$ values using Shapley decomposition of the total $R^2$ for Boosting Trees in polynomial time based on the [paper](https://arxiv.org/abs/2407.03515).
 
 Currently supports **XGBoost** and **LightGBM** models.
 

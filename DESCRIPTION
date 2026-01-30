@@ -1,6 +1,6 @@
 Package: qshapr
 Type: Package
-Title: Feature-Specific R-Squared Values for Tree Ensembles
+Title: Feature-Specific R-Squared Values for Boosting Trees
 Version: 1.0
 Date: 2025-02-18
 Authors@R: c(
@@ -8,7 +8,7 @@ Authors@R: c(
     person("Min", "Zhang", role = "aut"),
     person("Dabao", "Zhang", role = "aut"))
 Description: Computes feature-specific R-squared values using Shapley decomposition 
-    of the total R-squared for tree ensembles in polynomial time. Supports XGBoost 
+    of the total R-squared for Boosting Trees in polynomial time. Supports XGBoost 
     and LightGBM models with parallel processing capabilities. Based on the method 
     described in Jiang, Zhang, and Zhang (2024) "Fast Calculation of Feature 
     Contributions in Boosting Trees".

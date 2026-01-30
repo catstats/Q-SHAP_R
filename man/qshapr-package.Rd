@@ -3,11 +3,11 @@
 \alias{qshapr}
 \docType{package}
 \title{
-Feature-Specific R-Squared Values for Tree Ensembles
+Feature-Specific R-Squared Values for Boosting Trees
 }
 \description{
 The qshapr package computes feature-specific R-squared values using Shapley 
-decomposition of the total R-squared for tree ensembles in polynomial time. 
+decomposition of the total R-squared for Boosting Trees in polynomial time. 
 It supports XGBoost and LightGBM models with parallel processing capabilities.
 }
 \details{
