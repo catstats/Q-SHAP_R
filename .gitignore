@@ -5,6 +5,8 @@ src/*.dll
 src/*.a
 src/*.dylib
 *.tar.gz
+*.Rcheck/
+_codeql_detected_source_root
 
 # plots and json files
 *.pdf*
