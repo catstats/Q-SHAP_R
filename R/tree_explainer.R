@@ -7,10 +7,31 @@ NULL
 
 #' Create a QSHAPR Tree Explainer
 #' 
-#' Add this later
+#' Creates an explainer object for computing feature-specific Shapley values
+#' from a trained tree ensemble model. Supports XGBoost and LightGBM models.
 #' 
-#' @param tree_model A tree model object
-#' @return A TreeExplainer object
+#' @param tree_model A trained tree model object (xgb.Booster or lgb.Booster)
+#' @param max_depth Maximum depth of trees (optional, extracted from model if not provided)
+#' @param base_score Base score for predictions (optional, extracted from model if not provided)
+#' @param ... Additional arguments (currently unused)
+#' 
+#' @return A qshapr_tree_explainer object containing the model information and
+#'   preprocessed tree structures for fast Shapley value computation
+#'   
+#' @examples
+#' \dontrun{
+#' library(xgboost)
+#' 
+#' # Train a simple XGBoost model
+#' set.seed(42)
+#' X <- matrix(rnorm(100 * 5), nrow = 100, ncol = 5)
+#' y <- rowSums(X[, 1:3]) + rnorm(100, 0, 0.1)
+#' model <- xgboost(data = X, label = y, nrounds = 10, verbose = 0)
+#' 
+#' # Create explainer
+#' explainer <- create_tree_explainer(model)
+#' }
+#' 
 #' @export
 create_tree_explainer <- function(tree_model, max_depth = NULL, base_score = NULL, ...) {
   UseMethod("create_tree_explainer")
@@ -99,7 +120,18 @@ create_tree_explainer.default <- function(tree_model, ...) {
   stop(sprintf("create_tree_explainer not implemented for class %s", class(tree_model)[1]))
 }
 
-#' Q-SHAP Loss
+#' Calculate Q-SHAP Loss Contributions
+#' 
+#' Computes the feature-specific loss contributions using Q-SHAP decomposition.
+#' This is an internal function typically called by \code{qshap_rsq()}.
+#' 
+#' @param explainer A qshapr_tree_explainer object created by \code{create_tree_explainer()}
+#' @param x Feature matrix or data frame
+#' @param y Response vector
+#' @param y_mean_ori Optional pre-computed mean of y (for efficiency)
+#' 
+#' @return A matrix of loss contributions with dimensions (n_samples, n_features)
+#' 
 #' @export
 qshap_loss <- function(explainer, x, y, y_mean_ori = NULL) {
   UseMethod("qshap_loss")
@@ -115,6 +147,54 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
   )
 }
 
+ #' Calculate Feature-Specific R-Squared Values
+ #' 
+ #' Computes feature-specific R-squared values using Q-SHAP decomposition.
+ #' Supports parallel processing and sampling for large datasets.
+ #' 
+ #' @param explainer A qshapr_tree_explainer object created by \code{create_tree_explainer()}
+ #' @param x Feature matrix or data frame with n samples and p features
+ #' @param y Response vector of length n
+ #' @param loss_out Logical; if TRUE, returns both R-squared values and loss matrix
+ #' @param nsample Optional integer; number of samples to use (random subsample if less than nrow(x))
+ #' @param nfrac Optional numeric in (0,1); fraction of samples to use (alternative to nsample)
+ #' @param random_state Integer seed for reproducible sampling
+ #' @param ncore Number of cores for parallel processing. Use -1 for all available cores, 
+ #'   or a positive integer. Default is 1 (no parallelization)
+ #' 
+ #' @return If \code{loss_out=FALSE} (default), returns a numeric vector of length p 
+ #'   containing feature-specific R-squared values. If \code{loss_out=TRUE}, returns 
+ #'   a list with components \code{rsq} (the R-squared vector) and \code{loss} 
+ #'   (an n x p matrix of loss contributions).
+ #'   
+ #' @examples
+ #' \dontrun{
+ #' library(xgboost)
+ #' 
+ #' # Generate sample data
+ #' set.seed(42)
+ #' n <- 500
+ #' X <- matrix(rnorm(n * 5), nrow = n, ncol = 5)
+ #' colnames(X) <- paste0("Feature_", 1:5)
+ #' y <- 2 * X[,1] + 1.5 * X[,2] - 0.8 * X[,3] + rnorm(n, 0, 0.5)
+ #' 
+ #' # Train model
+ #' model <- xgboost(data = X, label = y, nrounds = 50, max_depth = 3, verbose = 0)
+ #' 
+ #' # Create explainer
+ #' explainer <- create_tree_explainer(model)
+ #' 
+ #' # Calculate R-squared values
+ #' phi_rsq <- qshap_rsq(explainer, X, y)
+ #' print(phi_rsq)
+ #' 
+ #' # With parallel processing
+ #' phi_rsq_parallel <- qshap_rsq(explainer, X, y, ncore = 4)
+ #' 
+ #' # With sampling
+ #' phi_rsq_sampled <- qshap_rsq(explainer, X, y, nsample = 100, random_state = 42)
+ #' }
+ #' 
  #' @export 
 qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
                       nfrac = NULL, random_state = 42,

@@ -1,7 +1,5 @@
 NULL
 
-library(progress)
-
 # Loss implementation for LightGBM model
 #' @keywords internal
 qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {

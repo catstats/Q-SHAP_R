@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.git$
+^\.gitignore$
+^README\.md$
+^tests/.*\.csv$
+^tests/.*\.py$
+^tests/.*\.swp$
+^R/.*\.pdf$

@@ -2,7 +2,6 @@
 NULL
 
 
-library(progress)
 # Loss implementation for xgboost model
 #' @keywords internal
 qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
