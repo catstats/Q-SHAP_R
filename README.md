@@ -214,8 +214,68 @@ vis$gcorr(phi_rsq, label = feature_names)
 ### Main Functions
 
 - `create_tree_explainer(model)`: Create a Q-SHAP explainer from a trained model
+  - Returns a `qshapr_tree_explainer` object with `print()` and `summary()` methods
 - `qshap_rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
+  - Returns a numeric vector (for backward compatibility)
+- `qshap_result(rsq, feature_names, ...)`: Create a Q-SHAP result object
+  - Returns a `qshap_result` object with `print()`, `summary()`, and `as.data.frame()` methods
 - `qshap_loss(explainer, X, y)`: Calculate feature-specific loss contributions
+
+### S3 Classes
+
+The package uses a formal S3 class system for better structure and usability:
+
+#### `qshapr_tree_explainer`
+
+Created by `create_tree_explainer()`. Contains the preprocessed model information for fast SHAP computation.
+
+```r
+explainer <- create_tree_explainer(model)
+
+# Print summary information
+print(explainer)
+#> <qshapr_tree_explainer>
+#>   Model type: xgboost
+#>   Number of trees: 50
+#>   Max depth: 2
+#>   Base score: 0.5
+
+# Detailed summary
+summary(explainer)
+```
+
+#### `qshap_result`
+
+Stores Q-SHAP R² results with rich metadata and convenient methods.
+
+```r
+# Create from qshap_rsq output
+phi_rsq <- qshap_rsq(explainer, X, y)
+result <- qshap_result(
+  rsq = phi_rsq,
+  feature_names = colnames(X),
+  n_samples = nrow(X)
+)
+
+# Print top contributing features
+print(result)
+#> <qshap_result>
+#>   Total R²: 0.8523
+#>   Number of features: 8
+#>   Number of samples: 1000
+#> 
+#> Top 10 features by R²:
+#>   Feature     R_squared
+#>   MedInc       0.4234
+#>   Latitude     0.1892
+#>   ...
+
+# Get detailed statistics
+summary(result)
+
+# Convert to data frame for further analysis
+df <- as.data.frame(result)
+```
 
 ### Visualization Functions
 
