@@ -296,8 +296,3 @@ df <- as.data.frame(result)
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Task List
-
-- [ ] Task 1: Add Catboost support
-- [ ] Task 2: Add more visualization examples
