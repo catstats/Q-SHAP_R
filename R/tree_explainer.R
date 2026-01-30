@@ -29,16 +29,16 @@ NULL
 #' model <- xgboost(data = X, label = y, nrounds = 10, verbose = 0)
 #' 
 #' # Create explainer
-#' explainer <- create_tree_explainer(model)
+#' explainer <- gazer(model)
 #' }
 #' 
 #' @export
-create_tree_explainer <- function(tree_model, max_depth = NULL, base_score = NULL, ...) {
-  UseMethod("create_tree_explainer")
+gazer <- function(tree_model, max_depth = NULL, base_score = NULL, ...) {
+  UseMethod("gazer")
 }
 
 #' @export
-create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
+gazer.xgb.Booster <- function(tree_model, ...) {
 
 
   tmp <- tempfile(fileext = ".json")
@@ -93,7 +93,7 @@ create_tree_explainer.xgb.Booster <- function(tree_model, ...) {
 }
 
 #' @export
-create_tree_explainer.lgb.Booster <- function(tree_model, max_depth = NULL, ...) {
+gazer.lgb.Booster <- function(tree_model, max_depth = NULL, ...) {
   # Get max_depth from model parameters or use default
   max_depth <- if (!is.null(tree_model$params$max_depth)) tree_model$params$max_depth else 31
   
@@ -115,12 +115,12 @@ create_tree_explainer.lgb.Booster <- function(tree_model, max_depth = NULL, ...)
 }
 
 # #' @export
-# create_tree_explainer.gbm <- function(tree_model, max_depth = NULL, ...) {
+# gazer.gbm <- function(tree_model, max_depth = NULL, ...) {
 # }
 
 #' @export
-create_tree_explainer.default <- function(tree_model, ...) {
-  stop(sprintf("create_tree_explainer not implemented for class %s", class(tree_model)[1]))
+gazer.default <- function(tree_model, ...) {
+  stop(sprintf("gazer not implemented for class %s", class(tree_model)[1]))
 }
 
 #' Calculate Q-SHAP Loss Contributions
@@ -128,7 +128,7 @@ create_tree_explainer.default <- function(tree_model, ...) {
 #' Computes the feature-specific loss contributions using Q-SHAP decomposition.
 #' This is an internal function typically called by \code{qshap_rsq()}.
 #' 
-#' @param explainer A qshapr_tree_explainer object created by \code{create_tree_explainer()}
+#' @param explainer A qshapr_tree_explainer object created by \code{gazer()}
 #' @param x Feature matrix or data frame
 #' @param y Response vector
 #' @param y_mean_ori Optional pre-computed mean of y (for efficiency)
@@ -155,7 +155,7 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' Computes feature-specific R-squared values using Q-SHAP decomposition.
  #' Supports parallel processing and sampling for large datasets.
  #' 
- #' @param explainer A qshapr_tree_explainer object created by \code{create_tree_explainer()}
+ #' @param explainer A qshapr_tree_explainer object created by \code{gazer()}
  #' @param x Feature matrix or data frame with n samples and p features
  #' @param y Response vector of length n
  #' @param loss_out Logical; if TRUE, returns both R-squared values and loss matrix
@@ -185,7 +185,7 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' model <- xgboost(data = X, label = y, nrounds = 50, max_depth = 3, verbose = 0)
  #' 
  #' # Create explainer
- #' explainer <- create_tree_explainer(model)
+ #' explainer <- gazer(model)
  #' 
  #' # Calculate R-squared values
  #' phi_rsq <- qshap_rsq(explainer, X, y)

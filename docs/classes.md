@@ -23,7 +23,7 @@ library(qshapr)
 model <- xgboost(data = X, label = y, nrounds = 50, verbose = 0)
 
 # Create explainer
-explainer <- create_tree_explainer(model)
+explainer <- gazer(model)
 
 # Quick summary
 print(explainer)

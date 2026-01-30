@@ -27,7 +27,7 @@ ypred <- predict(model, X)
 true_rsq <- 1 - sum((y - ypred)^2) / sum((y - mean(y))^2)
 
 # ---- Q-SHAP ----
-explainer <- qshapr::create_tree_explainer(model)
+explainer <- qshapr::gazer(model)
 
 # Ensure single-threaded operation for fair timing
 Sys.setenv(

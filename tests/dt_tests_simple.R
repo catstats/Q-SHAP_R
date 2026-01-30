@@ -24,7 +24,7 @@ tree_regressor <- rpart(
 )
 
 # Create explainer
-explainer <- qshapr::create_tree_explainer(tree_regressor)
+explainer <- qshapr::gazer(tree_regressor)
 
 print(explainer)
 

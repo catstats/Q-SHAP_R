@@ -58,7 +58,7 @@ sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse / sst
 
 t0 <- proc.time()
-explainer <- qshapr::create_tree_explainer(model)
+explainer <- qshapr::gazer(model)
 rsq_contributions <- qshapr::qshap_rsq(explainer, X, y)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
@@ -82,7 +82,7 @@ sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse / sst
 
 t0 <- proc.time()
-explainer <- qshapr::create_tree_explainer(model)
+explainer <- qshapr::gazer(model)
 # parallel computation with 10 cores (would be useful if n_samples is large or depth is high)
 rsq_cons <- qshapr::qshap_rsq(explainer, X, y, loss=TRUE, ncore = 10)
 t1 <- proc.time()

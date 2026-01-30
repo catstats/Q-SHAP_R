@@ -66,7 +66,7 @@ model <- xgboost(
 )
 
 # Create Q-SHAP explainer
-explainer <- create_tree_explainer(model)
+explainer <- gazer(model)
 
 # Calculate feature-specific R^2 values
 phi_rsq <- qshap_rsq(explainer, X_sample, y_sample)
@@ -128,7 +128,7 @@ lgb_model <- lgb.train(
 )
 
 # Create Q-SHAP explainer
-explainer <- create_tree_explainer(lgb_model)
+explainer <- gazer(lgb_model)
 
 # Calculate feature-specific R^2 values
 phi_rsq <- qshap_rsq(explainer, X, y)
@@ -214,7 +214,7 @@ vis$gcorr(phi_rsq, label = feature_names)
 
 ### Main Functions
 
-- `create_tree_explainer(model)`: Create a Q-SHAP explainer from a trained model
+- `gazer(model)`: Create a Q-SHAP explainer from a trained model
   - Returns a `qshapr_tree_explainer` object with `print()` and `summary()` methods
 - `qshap_rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
   - Returns a numeric vector (for backward compatibility)
@@ -228,10 +228,10 @@ The package uses a formal S3 class system for better structure and usability:
 
 #### `qshapr_tree_explainer`
 
-Created by `create_tree_explainer()`. Contains the preprocessed model information for fast SHAP computation.
+Created by `gazer()`. Contains the preprocessed model information for fast SHAP computation.
 
 ```r
-explainer <- create_tree_explainer(model)
+explainer <- gazer(model)
 
 # Print summary information
 print(explainer)

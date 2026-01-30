@@ -38,7 +38,7 @@ model <- xgboost(
   verbose = 0,
 )
 
-explainer <- qshapr::create_tree_explainer(model)
+explainer <- qshapr::gazer(model)
 rsq = qshapr::qshap_rsq(explainer, smallX, smally)
 
 print(rsq)

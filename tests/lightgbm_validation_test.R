@@ -32,7 +32,7 @@ true_rsq <- 1 - sse/sst
 cat("True Model R²:", true_rsq, "\n")
 
 # Create Q-SHAP explainer and calculate R² contributions
-explainer <- qshapr::create_tree_explainer(model)
+explainer <- qshapr::gazer(model)
 rsq_contributions <- qshapr::qshap_rsq(explainer, X, y)
 
 cat("Q-SHAP R² contributions:", rsq_contributions, "\n")
