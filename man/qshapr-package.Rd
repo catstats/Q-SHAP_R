@@ -15,7 +15,7 @@ The package provides fast computation of feature importance through Shapley
 values for tree ensemble models. Main functions include:
 
 \itemize{
-  \item \code{create_tree_explainer()}: Create a Q-SHAP explainer from a trained model
+  \item \code{gazer()}: Create a Q-SHAP explainer from a trained model
   \item \code{qshap_rsq()}: Calculate feature-specific R-squared values
   \item \code{qshap_loss()}: Calculate feature-specific loss contributions
   \item \code{vis$rsq()}: Visualize R-squared values
@@ -55,7 +55,7 @@ y <- 2 * X[,1] + 1.5 * X[,2] - 0.8 * X[,3] + rnorm(n, 0, 0.5)
 model <- xgboost(data = X, label = y, nrounds = 50, max_depth = 3, verbose = 0)
 
 # Create explainer and calculate R-squared values
-explainer <- create_tree_explainer(model)
+explainer <- gazer(model)
 phi_rsq <- qshap_rsq(explainer, X, y)
 
 # Visualize

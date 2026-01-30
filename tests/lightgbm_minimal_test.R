@@ -60,7 +60,7 @@ print("Basic LightGBM functionality verified!")
 # Now test our Q-SHAP functions
 print("Testing Q-SHAP explainer creation...")
 tryCatch({
-  explainer <- create_tree_explainer(lgb_model)
+  explainer <- gazer(lgb_model)
   print("Explainer created successfully")
   print(paste("Explainer model type:", explainer$model_type))
 }, error = function(e) {

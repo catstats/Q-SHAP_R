@@ -183,7 +183,7 @@ Consistent with modern R packages like:
 All existing code continues to work:
 ```r
 # Old code - still works
-explainer <- create_tree_explainer(model)
+explainer <- gazer(model)
 phi_rsq <- qshap_rsq(explainer, X, y)
 print(phi_rsq)
 vis$rsq(phi_rsq, label = colnames(X))

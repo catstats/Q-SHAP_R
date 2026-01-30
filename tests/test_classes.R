@@ -109,7 +109,7 @@ model <- xgboost(
 )
 
 # Create explainer
-explainer <- create_tree_explainer(model)
+explainer <- gazer(model)
 
 # Test class
 stopifnot(inherits(explainer, "qshapr_tree_explainer"))

@@ -44,7 +44,7 @@ print(paste("Model R-squared:", round(model_rsq, 6)))
 
 # Create Q-SHAP explainer
 print("Creating Q-SHAP explainer...")
-explainer <- create_tree_explainer(lgb_model)
+explainer <- gazer(lgb_model)
 print(paste("Explainer type:", explainer$model_type))
 print(paste("Max depth:", explainer$max_depth))
 print(paste("Number of trees:", length(explainer$trees)))

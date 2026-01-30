@@ -27,7 +27,7 @@ model <- lgb.train(
 )
 
 # Create Q-SHAP explainer
-explainer <- qshapr::create_tree_explainer(model)
+explainer <- qshapr::gazer(model)
 
 # Calculate Q-SHAP R^2 contributions
 rsq <- qshapr::qshap_rsq(explainer, X_small, y_small)

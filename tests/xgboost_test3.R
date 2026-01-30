@@ -33,7 +33,7 @@ ypred <- predict(model, X)
 true_rsq <- 1 - sum((y - ypred)^2) / sum((y - mean(y))^2)
 
 # Calculate Q-SHAP R² contributions
-explainer <- qshapr::create_tree_explainer(model)
+explainer <- qshapr::gazer(model)
 t_qshap <- system.time({
 rsq_contributions <- qshapr::qshap_rsq(explainer, X, y)
 })

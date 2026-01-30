@@ -18,7 +18,7 @@ lgb_model <- lgb.train(params = params, data = dtrain, nrounds = 1, verbose = -1
 print("Model trained successfully")
 
 print("=== STEP 3: Creating explainer ===")
-explainer <- create_tree_explainer(lgb_model)
+explainer <- gazer(lgb_model)
 print("Explainer created successfully")
 print(paste("Model type:", explainer$model_type))
 print(paste("Trees count:", length(explainer$trees)))

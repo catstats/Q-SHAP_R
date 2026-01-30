@@ -58,7 +58,7 @@ sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse/sst
 
 # Create Q-SHAP explainer
-explainer <- create_tree_explainer(lgb_model)
+explainer <- gazer(lgb_model)
 
 # Time the Q-SHAP calculation
 start_time <- Sys.time()
