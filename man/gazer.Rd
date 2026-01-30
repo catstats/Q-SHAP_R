@@ -7,11 +7,33 @@
 gazer(tree_model, max_depth = NULL, base_score = NULL, ...)
 }
 \arguments{
-\item{tree_model}{A tree model object}
+\item{tree_model}{A trained tree model object (xgb.Booster or lgb.Booster)}
+
+\item{max_depth}{Maximum depth of trees (optional, extracted from model if not provided)}
+
+\item{base_score}{Base score for predictions (optional, extracted from model if not provided)}
+
+\item{...}{Additional arguments (currently unused)}
 }
 \value{
-A TreeExplainer object
+A qshapr_tree_explainer object containing the model information and
+  preprocessed tree structures for fast Shapley value computation
 }
 \description{
-Add this later
+Creates an explainer object for computing feature-specific Shapley values
+from a trained tree ensemble model. Supports XGBoost and LightGBM models.
+}
+\examples{
+\dontrun{
+library(xgboost)
+
+# Train a simple XGBoost model
+set.seed(42)
+X <- matrix(rnorm(100 * 5), nrow = 100, ncol = 5)
+y <- rowSums(X[, 1:3]) + rnorm(100, 0, 0.1)
+model <- xgboost(data = X, label = y, nrounds = 10, verbose = 0)
+
+# Create explainer
+explainer <- gazer(model)
+}
 }

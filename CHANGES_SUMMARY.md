@@ -182,7 +182,7 @@ Consistent with modern R packages like:
 
 All existing code continues to work:
 ```r
-# Old code - still works
+# Code using new function name
 explainer <- gazer(model)
 phi_rsq <- qshap_rsq(explainer, X, y)
 print(phi_rsq)
