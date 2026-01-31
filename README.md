@@ -50,31 +50,27 @@ X <- data.frame(
 
 y <- housing$median_house_value
 
-# Sample 1000 observations for demonstration
-set.seed(42)
-sample_idx <- sample(nrow(X), 1000)
-X_sample <- X[sample_idx, ]
-y_sample <- y[sample_idx]
 
 # Train XGBoost model
 model <- xgboost(
-  data = as.matrix(X_sample),
-  label = y_sample,
-  nrounds = 50,
-  max_depth = 2,
-  verbose = 0
+  x = as.matrix(X),
+  y =  y,
+  nrounds = 100,
+  max_depth = 3,
+  learning_rate = 0.1,
+  objective = "reg:squarederror",
 )
 
 # Create Q-SHAP explainer
 explainer <- gazer(model)
 
 # Calculate feature-specific R^2 values
-phi_rsq <- qshap_rsq(explainer, X_sample, y_sample)
+phi_rsq <- qshap_rsq(explainer, X, y, nsample=1024)
 
 # Calculate model R^2 for verification
-ypred <- predict(model, as.matrix(X_sample))
-sst <- sum((y_sample - mean(y_sample))^2)
-sse <- sum((y_sample - ypred)^2)
+ypred <- predict(model, as.matrix(X))
+sst <- sum((y - mean(y))^2)
+sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse/sst
 
 # Print R^2 values for each feature
@@ -84,8 +80,8 @@ print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize feature-specific R^2
 vis$rsq(
-  phi_rsq, 
-  label = colnames(X_sample),
+  phi_rsq,
+  label = colnames(X),
   rotation = 45,
   color_map_name = "Blues",
   title = "Feature-Specific R² (XGBoost)"
@@ -99,11 +95,12 @@ vis$rsq(
 library(lightgbm)
 library(qshapr)
 
-# Generate synthetic data
+# Generate synthetic data with high dimension
 set.seed(42)
-n <- 500
-X <- matrix(rnorm(n * 8), nrow = n, ncol = 8)
-colnames(X) <- paste0("Feature_", 1:8)
+n <- 1000
+p <- 1000
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+colnames(X) <- paste0("Feature_", 1:p)
 
 # True model: y depends mainly on first 3 features
 y <- 2 * X[,1] + 1.5 * X[,2] - 0.8 * X[,3] + rnorm(n, 0, 0.5)
@@ -148,6 +145,7 @@ print(paste("Model R^2:", round(model_rsq, 4)))
 vis$rsq(
   phi_rsq,
   label = colnames(X),
+  rotation=45,
   color_map_name = "Greens",
   title = "Feature-Specific R² (LightGBM)"
 )
@@ -172,8 +170,8 @@ phi_rsq <- qshap_rsq(explainer, X, y, ncore = -1)
 When working with very large datasets, you can sample a subset:
 
 ```r
-# Sample 1024 observations
-phi_rsq <- qshap_rsq(explainer, X, y, nsample = 1024, random_state = 42)
+# Sample 512 observations
+phi_rsq <- qshap_rsq(explainer, X, y, nsample = 512, random_state = 42)
 
 # Or use a fraction of the data
 phi_rsq <- qshap_rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
@@ -185,19 +183,21 @@ The package provides multiple visualization functions:
 
 ```r
 # Standard bar plot
-vis$rsq(phi_rsq, label = feature_names, color_map_name = "Blues")
+feature_names <- colnames(X)
+
+vis$rsq(phi_rsq, label = feature_names, color_map_name = "Blues", rotation=45)
 
 # Horizontal bar plot
 vis$rsq(phi_rsq, label = feature_names, horizontal = TRUE)
 
 # Elbow plot (top features)
-vis$elbow(phi_rsq, label = feature_names, max_comp = 10)
+vis$elbow(phi_rsq, label = feature_names, max_comp = 10, rotation=45)
 
 # Cumulative explained variance
 vis$cumu(phi_rsq, label = feature_names, max_comp = 10)
 
 # Generalized correlation (sqrt of R²)
-vis$gcorr(phi_rsq, label = feature_names)
+vis$gcorr(phi_rsq, label = feature_names, rotation=45)
 ```
 
 ## Citation
@@ -264,7 +264,7 @@ print(result)
 #>   Total R²: 0.8523
 #>   Number of features: 8
 #>   Number of samples: 1000
-#> 
+#>
 #> Top 10 features by R²:
 #>   Feature     R_squared
 #>   MedInc       0.4234
