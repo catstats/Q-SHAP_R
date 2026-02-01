@@ -17,6 +17,7 @@ TreeSummary list_to_tree_summary(const Rcpp::List &tree_summary_list)
     summary.feature = Rcpp::as<Eigen::VectorXi>(feature_r);
     summary.feature_uniq = Rcpp::as<Eigen::VectorXi>(feature_uniq_r);
     // Convert to float for memory efficiency
+    // Note: Rcpp::as<Eigen::VectorXf> is not supported, so we convert via VectorXd first
     summary.threshold = Rcpp::as<Eigen::VectorXd>(threshold_r).cast<float>();
     summary.sample_weight = Rcpp::as<Eigen::VectorXd>(sample_weight_r).cast<float>();
     summary.init_prediction = Rcpp::as<Eigen::VectorXd>(init_prediction_r).cast<float>();
