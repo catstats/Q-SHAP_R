@@ -155,15 +155,25 @@ vis$rsq(
 
 ### Parallel Processing
 
-For large datasets, use parallel processing to speed up calculations:
+For large datasets, use parallel processing to speed up calculations. The function includes a progress bar to monitor computation:
 
 ```r
-# Use 4 cores for parallel processing
+# Use 4 cores for parallel processing (with progress bar)
 phi_rsq <- qshap_rsq(explainer, X, y, ncore = 4)
+# Output: Processing 1000 samples using 4 cores in 10 chunks...
+#         [==========] 10/10 chunks (100%) ETA:  0s
 
 # Use all available cores
 phi_rsq <- qshap_rsq(explainer, X, y, ncore = -1)
 ```
+
+The progress bar shows:
+- Number of samples and cores being used
+- Visual progress with percentage completion
+- Estimated time remaining (ETA)
+
+See [docs/parallel_progress.md](docs/parallel_progress.md) for detailed information about the progress bar feature.
+
 
 ### Sampling Large Datasets
 
