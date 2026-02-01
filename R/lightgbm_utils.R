@@ -19,6 +19,9 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
   if (!is.matrix(x)) {
     x <- as.matrix(x)
   }
+  # Ensure x and y are stored as numeric (double) for efficient C++ interface
+  storage.mode(x) <- "double"
+  storage.mode(y) <- "double"
 
     pb <- progress::progress_bar$new(
       format = "Progress [:bar] :current/:total (:percent)",
