@@ -16,9 +16,10 @@ TreeSummary list_to_tree_summary(const Rcpp::List &tree_summary_list)
     summary.children_right = Rcpp::as<Eigen::VectorXi>(children_right_r);
     summary.feature = Rcpp::as<Eigen::VectorXi>(feature_r);
     summary.feature_uniq = Rcpp::as<Eigen::VectorXi>(feature_uniq_r);
-    summary.threshold = Rcpp::as<Eigen::VectorXd>(threshold_r);
-    summary.sample_weight = Rcpp::as<Eigen::VectorXd>(sample_weight_r);
-    summary.init_prediction = Rcpp::as<Eigen::VectorXd>(init_prediction_r);
+    // Convert to float for memory efficiency
+    summary.threshold = Rcpp::as<Eigen::VectorXd>(threshold_r).cast<float>();
+    summary.sample_weight = Rcpp::as<Eigen::VectorXd>(sample_weight_r).cast<float>();
+    summary.init_prediction = Rcpp::as<Eigen::VectorXd>(init_prediction_r).cast<float>();
 
     summary.max_depth = Rcpp::as<int>(tree_summary_list["max_depth"]);
     summary.node_count = Rcpp::as<int>(tree_summary_list["node_count"]);
@@ -136,8 +137,8 @@ void traversal_weight(
     const Eigen::VectorXi &children_left,
     const Eigen::VectorXi &children_right,
     const Eigen::VectorXi &feature,
-    const Eigen::VectorXd &threshold,
-    const Eigen::VectorXd &sample_weight,
+    const Eigen::VectorXf &threshold,        // Changed from VectorXd to VectorXf
+    const Eigen::VectorXf &sample_weight,    // Changed from VectorXd to VectorXf
     const Eigen::VectorXi &leaf_ind,
     Eigen::MatrixXd &w_res,
     Eigen::MatrixXi &w_ind,

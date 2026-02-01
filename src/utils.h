@@ -14,10 +14,10 @@ struct TreeSummary {
     Eigen::VectorXi children_right;
     Eigen::VectorXi feature;
     Eigen::VectorXi feature_uniq;
-    Eigen::VectorXd threshold;
+    Eigen::VectorXf threshold;           // Changed from VectorXd to VectorXf for memory efficiency
     int max_depth;
-    Eigen::VectorXd sample_weight;
-    Eigen::VectorXd init_prediction;
+    Eigen::VectorXf sample_weight;       // Changed from VectorXd to VectorXf for memory efficiency
+    Eigen::VectorXf init_prediction;     // Changed from VectorXd to VectorXf for memory efficiency
     int node_count;
 };
 
@@ -25,10 +25,10 @@ struct SimpleTree {
     Eigen::VectorXi children_left;
     Eigen::VectorXi children_right;
     Eigen::VectorXi feature;
-    Eigen::VectorXd threshold;
+    Eigen::VectorXf threshold;           // Changed from VectorXd to VectorXf for memory efficiency
     int max_depth;
-    Eigen::VectorXd n_node_samples;
-    Eigen::VectorXd value;
+    Eigen::VectorXf n_node_samples;      // Changed from VectorXd to VectorXf for memory efficiency
+    Eigen::VectorXf value;               // Changed from VectorXd to VectorXf for memory efficiency
     int node_count;
 };
 
@@ -53,8 +53,8 @@ void traversal_weight(
     const Eigen::VectorXi& children_left,
     const Eigen::VectorXi& children_right,
     const Eigen::VectorXi& feature,
-    const Eigen::VectorXd& threshold,
-    const Eigen::VectorXd& sample_weight,
+    const Eigen::VectorXf& threshold,        // Changed from VectorXd to VectorXf
+    const Eigen::VectorXf& sample_weight,    // Changed from VectorXd to VectorXf
     const Eigen::VectorXi& leaf_ind,
     Eigen::MatrixXd& w_res,
     Eigen::MatrixXi& w_ind,
