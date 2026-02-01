@@ -247,8 +247,14 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
     }
   }
 
-  # Divide indices into ncore chunks (preserve order)
-  idx_chunks <- split(seq_len(n), cut(seq_len(n), breaks = ncore, labels = FALSE))
+  # For better progress tracking with parallel processing, create more chunks
+  # than cores. This allows load-balanced processing with progress updates.
+  min_chunks <- max(ncore * 2, 10)  # At least 2 chunks per core, minimum 10 total
+  n_chunks <- min(min_chunks, n)  # But not more chunks than samples
+  idx_chunks <- split(seq_len(n), cut(seq_len(n), breaks = n_chunks, labels = FALSE))
+
+  message(sprintf("Processing %d samples using %d cores in %d chunks...", 
+                  n, ncore, length(idx_chunks)))
 
   # Parallel compute using PSOCK cluster (CRAN/Windows friendly)
   cl <- parallel::makeCluster(ncore)
@@ -260,12 +266,12 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
   # Export needed data once (avoid resending for every task)
   parallel::clusterExport(
     cl,
-    varlist = c("x", "y", "explainer", "y_mean_ori", "idx_chunks", "loss_out"),
+    varlist = c("x", "y", "explainer", "y_mean_ori", "loss_out"),
     envir = environment()
   )
 
   worker <- function(idx) {
-    # compute loss for this chunk
+    # Compute loss for this chunk
     lc <- qshapr::qshap_loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
     if (loss_out) {
       lc
@@ -274,7 +280,36 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
     }
   }
 
-  results <- parallel::parLapply(cl, idx_chunks, worker)
+  # Initialize progress bar
+  pb <- progress::progress_bar$new(
+    format = "  [:bar] :current/:total chunks (:percent) ETA: :eta",
+    total = length(idx_chunks),
+    clear = FALSE,
+    width = 70
+  )
+
+  # Use a hybrid approach: process chunks in small batches with progress updates
+  # This provides a good balance between parallelism and progress visibility
+  batch_size <- ncore  # Process ncore chunks at a time
+  n_batches <- ceiling(length(idx_chunks) / batch_size)
+  
+  results <- vector("list", length(idx_chunks))
+  
+  for (batch_idx in seq_len(n_batches)) {
+    # Determine which chunks to process in this batch
+    start_chunk <- (batch_idx - 1) * batch_size + 1
+    end_chunk <- min(batch_idx * batch_size, length(idx_chunks))
+    batch_chunks <- idx_chunks[start_chunk:end_chunk]
+    
+    # Process this batch in parallel
+    batch_results <- parallel::parLapply(cl, batch_chunks, worker)
+    
+    # Store results
+    for (i in seq_along(batch_results)) {
+      results[[start_chunk + i - 1]] <- batch_results[[i]]
+      pb$tick()
+    }
+  }
 
   if (loss_out) {
     # Combine full loss matrix (row-bind like np.concatenate(axis=0))
