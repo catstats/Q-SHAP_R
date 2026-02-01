@@ -249,7 +249,14 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
 
   # For better progress tracking with parallel processing, create more chunks
   # than cores. This allows load-balanced processing with progress updates.
-  min_chunks <- max(ncore * 2, 10)  # At least 2 chunks per core, minimum 10 total
+  # Minimum of 10 chunks ensures reasonable progress granularity even with few cores,
+  # while 2-4 chunks per core provides good load balancing for many-core systems.
+  # For many cores, we create even more chunks to ensure frequent progress updates.
+  if (ncore <= 4) {
+    min_chunks <- max(ncore * 2, 10)  # 2 chunks per core, min 10
+  } else {
+    min_chunks <- max(ncore * 4, 20)  # 4 chunks per core for better progress with many cores
+  }
   n_chunks <- min(min_chunks, n)  # But not more chunks than samples
   idx_chunks <- split(seq_len(n), cut(seq_len(n), breaks = n_chunks, labels = FALSE))
 
@@ -290,7 +297,8 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
 
   # Use a hybrid approach: process chunks in small batches with progress updates
   # This provides a good balance between parallelism and progress visibility
-  batch_size <- ncore  # Process ncore chunks at a time
+  # Each batch uses all available cores, processing 'ncore' chunks simultaneously
+  batch_size <- ncore  # Process ncore chunks at a time (one per core)
   n_batches <- ceiling(length(idx_chunks) / batch_size)
   
   results <- vector("list", length(idx_chunks))

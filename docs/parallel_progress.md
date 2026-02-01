@@ -45,13 +45,15 @@ Processing 1000 samples using 4 cores in 10 chunks...
 
 The implementation creates more chunks than cores to enable better progress tracking:
 
-- **Minimum chunks**: At least 2 chunks per core
-- **Total minimum**: At least 10 chunks total
+- **For 1-4 cores**: At least 2 chunks per core, minimum 10 chunks total
+- **For 5+ cores**: At least 4 chunks per core, minimum 20 chunks total
 - **Maximum**: Not more chunks than samples
 
 For example:
-- With 4 cores and 1000 samples: Creates 10 chunks (2.5 per core rounded up)
-- With 8 cores and 100 samples: Creates 16 chunks if possible, or 100 (sample limit)
+- With 2 cores and 50 samples: Creates 10 chunks (minimum threshold)
+- With 4 cores and 1000 samples: Creates 10 chunks (max of 8 from 2×4 cores or 10 minimum)
+- With 8 cores and 1000 samples: Creates 32 chunks (4 per core for better progress granularity)
+- With 16 cores and 100 samples: Creates 64 chunks, but limited to 100 (sample limit)
 
 ### Batched Processing
 

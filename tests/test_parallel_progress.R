@@ -34,7 +34,7 @@ cat("Training XGBoost model...\n")
 model <- xgboost(
   data = X, 
   label = y, 
-  nrounds = 30,  # More trees to make progress visible
+  nrounds = 30,  # 30 rounds provides enough computation to make progress visible
   max_depth = 3, 
   verbose = 0
 )
