@@ -4,7 +4,8 @@ Title: Feature-Specific R-Squared Values for Boosting Trees
 Version: 1.0
 Date: 2025-02-18
 Authors@R: c(
-    person("Zhongli", "Jiang", role = c("aut", "cre"), email = "zhongli.jiang@example.com"),
+    person("Steven", "He", role = "aut", email=hess1@uci.edu)
+    person("Zhongli", "Jiang", role = c("aut", "cre"), email = "zhongli.jiang.stats@gmail.com"),
     person("Min", "Zhang", role = "aut"),
     person("Dabao", "Zhang", role = "aut"))
 Description: Computes feature-specific R-squared values using Shapley decomposition 
