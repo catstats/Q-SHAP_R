@@ -293,6 +293,9 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
 #' 
 #' A shorter alias for \code{\link{qshap_rsq}}. See that function for full documentation.
 #' 
+#' @note This is a convenience function (not an S3 method). The \code{.f} suffix
+#'   stands for "function" to provide a shorter alternative to \code{qshap_rsq}.
+#' 
 #' @inheritParams qshap_rsq
 #' @seealso \code{\link{qshap_rsq}} for detailed documentation
 #' @export
@@ -304,6 +307,9 @@ rsq.f <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
 #' Convenience wrapper for qshap_loss
 #' 
 #' A shorter alias for \code{\link{qshap_loss}}. See that function for full documentation.
+#' 
+#' @note This is a convenience function (not an S3 method). The \code{.f} suffix
+#'   stands for "function" to provide a shorter alternative to \code{qshap_loss}.
 #' 
 #' @inheritParams qshap_loss
 #' @seealso \code{\link{qshap_loss}} for detailed documentation

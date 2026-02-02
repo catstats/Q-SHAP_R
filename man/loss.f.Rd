@@ -18,6 +18,10 @@ loss.f(explainer, x, y, y_mean_ori = NULL)
 \description{
 A shorter alias for \code{\link{qshap_loss}}. See that function for full documentation.
 }
+\note{
+This is a convenience function (not an S3 method). The \code{.f} suffix
+stands for "function" to provide a shorter alternative to \code{qshap_loss}.
+}
 \seealso{
 \code{\link{qshap_loss}} for detailed documentation
 }

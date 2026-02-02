@@ -36,6 +36,10 @@ or a positive integer. Default is 1 (no parallelization)}
 \description{
 A shorter alias for \code{\link{qshap_rsq}}. See that function for full documentation.
 }
+\note{
+This is a convenience function (not an S3 method). The \code{.f} suffix
+stands for "function" to provide a shorter alternative to \code{qshap_rsq}.
+}
 \seealso{
 \code{\link{qshap_rsq}} for detailed documentation
 }
