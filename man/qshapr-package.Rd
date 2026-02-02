@@ -16,8 +16,8 @@ values for tree ensemble models. Main functions include:
 
 \itemize{
   \item \code{gazer()}: Create a Q-SHAP explainer from a trained model
-  \item \code{qshap_rsq()}: Calculate feature-specific R-squared values
-  \item \code{qshap_loss()}: Calculate feature-specific loss contributions
+  \item \code{qshap_rsq()} or \code{rsq.f()}: Calculate feature-specific R-squared values
+  \item \code{qshap_loss()} or \code{loss.f()}: Calculate feature-specific loss contributions
   \item \code{vis$rsq()}: Visualize R-squared values
   \item \code{vis$elbow()}: Create elbow plot of top features
   \item \code{vis$cumu()}: Plot cumulative explained variance

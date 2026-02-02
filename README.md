@@ -218,9 +218,11 @@ vis$gcorr(phi_rsq, label = feature_names, rotation=45)
   - Returns a `qshapr_tree_explainer` object with `print()` and `summary()` methods
 - `qshap_rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
   - Returns a numeric vector (for backward compatibility)
+  - Shorter alias: `rsq.f()`
 - `qshap_result(rsq, feature_names, ...)`: Create a Q-SHAP result object
   - Returns a `qshap_result` object with `print()`, `summary()`, and `as.data.frame()` methods
 - `qshap_loss(explainer, X, y)`: Calculate feature-specific loss contributions
+  - Shorter alias: `loss.f()`
 
 ### S3 Classes
 
