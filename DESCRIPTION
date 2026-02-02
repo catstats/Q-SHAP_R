@@ -1,13 +1,14 @@
 Package: qshapr
 Type: Package
-Title: Feature-Specific R-Squared Values for Boosting Trees
+Title: Fast Calculation of Feature Contributions in Boosting Trees
 Version: 1.0
 Date: 2025-02-18
 Authors@R: c(
-    person("Steven", "He", role = "aut", email="hess1@uci.edu")
+    person("Steven", "He", role = "aut", email = "hess1@uci.edu"),
     person("Zhongli", "Jiang", role = c("aut", "cre"), email = "zhongli.jiang.stats@gmail.com"),
-    person("Dabao", "Zhang", role = "aut", email="zdb969@hs.uci.edu"),
-    person("Min", "Zhang", role = "aut"))
+    person("Dabao", "Zhang", role = "aut", email = "zdb969@hs.uci.edu"),
+    person("Min", "Zhang", role = "aut")
+)
 Description: Computes feature-specific R-squared values using Shapley decomposition 
     of the total R-squared for Boosting Trees in polynomial time. Supports XGBoost 
     and LightGBM models with parallel processing capabilities. Based on the method 
