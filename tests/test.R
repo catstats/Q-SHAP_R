@@ -24,7 +24,7 @@ X <- matrix(rnorm(n_samples * n_features), nrow = n_samples, ncol = n_features)
 beta <- numeric(n_features)
 beta[1:n_informative] <- runif(n_informative, min = 1.0, max = 2.0)
 
-signal <- X %*% beta
+signal <- X %*% beta 
 y <- as.numeric(signal + rnorm(n_samples, sd = 0.5))
 
 cat("Simulated data with", n_informative, "informative features.\n")
@@ -62,8 +62,13 @@ explainer <- qshapr::gazer(model)
 rsq_contributions <- qshapr::qshap_rsq(explainer, X, y)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
-cat("Q-SHAP R^2 sum:", sum(rsq_contributions), "\n")
+cat("Q-SHAP R^2 sum:", sum(rsq_contributions$rsq), "\n")
 cat("Model R^2 is:", model_rsq, "\n\n")
+
+# Check confidence intervals:
+rsq_contributions$sd_rsq
+rsq_contributions$ci_lower
+rsq_contributions$ci_upper
 
 ## xgboost test
 max_depth = 2L
@@ -95,7 +100,7 @@ cat("Model R^2 is:", model_rsq, "\n\n")
 # if you would like to use sampling
 
 t0 <- proc.time()
-rsq_contributions_sample <- qshapr::qshap_rsq(explainer, X, y, nsample=128)
+rsq_contributions_sample <- qshapr::qshap_rsq(explainer, X, y, nsample=512)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 
@@ -105,7 +110,7 @@ sst <- sum((y - mean(y))^2)
 sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse / sst
 
-cat("Q-SHAP R^2 sum is:", sum(rsq_contributions_sample), "\n")
+cat("Q-SHAP R^2 sum is:", sum(rsq_contributions_sample$rsq), "\n")
 cat("Model R^2 is:", model_rsq, "\n")
 
 

@@ -159,6 +159,9 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' @param x Feature matrix or data frame with n samples and p features
  #' @param y Response vector of length n
  #' @param loss_out Logical; if TRUE, returns both R-squared values and loss matrix
+ #' @param sd_out Logical; if TRUE, returns standard deviations of R-squared estimates
+ #' @param ci_out Logical; if TRUE, returns Wald-style confidence intervals for each feature's R-squared (normal approximation using sd_rsq)
+ #' @param level Confidence level for the intervals (default 0.95)
  #' @param nsample Optional integer; number of samples to use (random subsample if less than nrow(x))
  #' @param nfrac Optional numeric in (0,1); fraction of samples to use (alternative to nsample)
  #' @param random_state Integer seed for reproducible sampling
@@ -168,7 +171,8 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' @return If \code{loss_out=FALSE} (default), returns a numeric vector of length p 
  #'   containing feature-specific R-squared values. If \code{loss_out=TRUE}, returns 
  #'   a list with components \code{rsq} (the R-squared vector) and \code{loss} 
- #'   (an n x p matrix of loss contributions).
+ #'   (an n x p matrix of loss contributions). When \code{ci_out=TRUE}, the returned list
+ #'   also contains \code{ci_lower} and \code{ci_upper} vectors representing Wald-style confidence intervals.
  #'   
  #' @examples
  #' \dontrun{
@@ -199,7 +203,8 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' }
  #' 
  #' @export 
-qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
+qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL, sd_out = TRUE,
+                      ci_out = TRUE, level = 0.95,
                       nfrac = NULL, random_state = 42,
                       ncore = 1L) {
   # Sampling logic
@@ -222,6 +227,20 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
     y <- y[sample_idx]
   }
 
+  # CI implies we need sd estimates
+  if (isTRUE(ci_out)) sd_out <- TRUE
+  if (is.null(level) || length(level) != 1 || is.na(level) || level <= 0 || level >= 1) {
+    stop("level must be a single number in (0, 1)")
+  }
+
+  ci_from_sd <- function(rsq, sd_rsq, level) {
+    z <- stats::qnorm(1 - (1 - level) / 2)
+    list(
+      ci_lower = rsq - z * sd_rsq,
+      ci_upper = rsq + z * sd_rsq
+    )
+  }
+
   y_mean_ori <- mean(y)
   sst <- sum((y - y_mean_ori)^2)
 
@@ -240,11 +259,32 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
   if (ncore == 1L || n <= 1L) {
     loss <- qshap_loss(explainer, x, y, y_mean_ori)
     rsq <- -colSums(loss) / sst
-    if (loss_out) {
-      return(list(rsq = rsq, loss = loss))
+
+     if (sd_out) {
+      # sample variance across i for each feature j
+      loss_mean <- colMeans(loss)
+      loss_var  <- colSums((loss - matrix(loss_mean, n, ncol(loss), byrow = TRUE))^2) / (n - 1)
+      sd_rsq    <- sqrt(n * loss_var) / sst
     } else {
-      return(rsq)
+      sd_rsq <- NULL
     }
+    if (ci_out && !is.null(sd_rsq)) {
+      ci <- ci_from_sd(rsq, sd_rsq, level)
+    } else {
+      ci <- NULL
+    }
+
+    if (loss_out) {
+      out <- list(rsq = rsq, loss = loss, sd_rsq = sd_rsq)
+    } else {
+      out <- list(rsq = rsq, sd_rsq = sd_rsq)
+    }
+    if (!is.null(ci)) {
+      out$ci_lower <- ci$ci_lower
+      out$ci_upper <- ci$ci_upper
+      out$level <- level
+    }
+    return(out)
   }
 
   # Divide indices into ncore chunks (preserve order)
@@ -265,26 +305,80 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL,
   )
 
   worker <- function(idx) {
-    # compute loss for this chunk
-    lc <- qshapr::qshap_loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
-    if (loss_out) {
-      lc
-    } else {
-      colSums(lc)
-    }
+  lc <- qshapr::qshap_loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
+
+  if (loss_out) {
+    # keep full chunk loss matrix
+    return(lc)
+  } else {
+    # return sufficient statistics only
+    return(list(
+      sum   = colSums(lc),
+      sumsq = if (sd_out) colSums(lc^2) else NULL,
+      n     = length(idx)
+    ))
+  }
   }
 
   results <- parallel::parLapply(cl, idx_chunks, worker)
 
-  if (loss_out) {
-    # Combine full loss matrix (row-bind like np.concatenate(axis=0))
-    loss <- do.call(rbind, results)
-    rsq <- -colSums(loss) / sst
-    return(list(rsq = rsq, loss = loss))
+if (loss_out) {
+  # Combine full loss matrix
+  loss <- do.call(rbind, results)
+  n_all <- nrow(loss)
+
+  # point estimate
+  rsq <- -colSums(loss) / sst
+
+  if (sd_out) {
+      loss_mean <- colMeans(loss)
+      loss_var  <- colSums((loss - matrix(loss_mean, n_all, ncol(loss), byrow = TRUE))^2) / (n_all - 1)
+      sd_rsq    <- sqrt(n_all * loss_var) / sst
+    } else {
+      sd_rsq <- NULL
+    }
+  if (ci_out && !is.null(sd_rsq)) {
+    ci <- ci_from_sd(rsq, sd_rsq, level)
   } else {
-    # Combine by summing column-sums (memory efficient)
-    loss_sum <- Reduce(`+`, results)
-    rsq <- -loss_sum / sst
-    return(rsq)
+    ci <- NULL
   }
+  out <- list(rsq = rsq, loss = loss, sd_rsq = sd_rsq)
+  if (!is.null(ci)) {
+    out$ci_lower <- ci$ci_lower
+    out$ci_upper <- ci$ci_upper
+    out$level <- level
+  }
+  return(out)
+
+} else {
+  # Combine sufficient statistics
+  sum_all <- Reduce(`+`, lapply(results, `[[`, "sum"))
+  sumsq_all <- Reduce(`+`, lapply(results, `[[`, "sumsq"))
+  n_all <- sum(vapply(results, `[[`, numeric(1), "n"))
+
+  # point estimate
+  rsq <- -sum_all / sst
+
+  if (sd_out) {
+      sumsq_all <- Reduce(`+`, lapply(results, `[[`, "sumsq"))
+      # unbiased sample variance across i
+      loss_var <- (sumsq_all - (sum_all^2) / n_all) / (n_all - 1)
+      sd_rsq   <- sqrt(n_all * loss_var) / sst
+    } else {
+      sd_rsq <- NULL
+    }
+  if (ci_out && !is.null(sd_rsq)) {
+    ci <- ci_from_sd(rsq, sd_rsq, level)
+  } else {
+    ci <- NULL
+  }
+  out <- list(rsq = rsq, sd_rsq = sd_rsq)
+  if (!is.null(ci)) {
+    out$ci_lower <- ci$ci_lower
+    out$ci_upper <- ci$ci_upper
+    out$level <- level
+  }
+  return(out)
+}
+
 }
