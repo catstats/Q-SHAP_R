@@ -24,20 +24,20 @@ install.packages("devtools")
 devtools::install_github("catstats/Q-SHAP_R")
 ```
 
-## Using rsq.f() - The Shorter Syntax
+## Using rsq() - The Shorter Syntax
 
-The package provides `rsq.f()` as a convenient shorter alias for `qshap_rsq()`. Both functions work identically:
+The package provides `rsq()` as a convenient shorter alias for `qshap_rsq()`. Both functions work identically:
 
 ```r
 # These two lines are equivalent:
 phi_rsq <- qshap_rsq(explainer, X, y)  # Full function name
-phi_rsq <- rsq.f(explainer, X, y)      # Shorter alias
+phi_rsq <- rsq(explainer, X, y)        # Shorter alias
 
 # All parameters work the same way:
-phi_rsq <- rsq.f(explainer, X, y, nsample = 512, ncore = 4)
+phi_rsq <- rsq(explainer, X, y, nsample = 512, ncore = 4)
 ```
 
-Throughout the examples below, we use `rsq.f()` for more concise code. You can use either function based on your preference.
+Throughout the examples below, we use `rsq()` for more concise code. You can use either function based on your preference.
 
 ## Quick Start with XGBoost
 
@@ -80,8 +80,8 @@ model <- xgboost(
 explainer <- gazer(model)
 
 # Calculate feature-specific R^2 values
-# Using qshap_rsq() or the shorter alias rsq.f()
-phi_rsq <- rsq.f(explainer, X, y, nsample=1024)
+# Using qshap_rsq() or the shorter alias rsq()
+phi_rsq <- rsq(explainer, X, y, nsample=1024)
 
 # Calculate model R^2 for verification
 ypred <- predict(model, as.matrix(X))
@@ -144,8 +144,8 @@ lgb_model <- lgb.train(
 explainer <- gazer(lgb_model)
 
 # Calculate feature-specific R^2 values  
-# Using the shorter alias rsq.f() (same as qshap_rsq)
-phi_rsq <- rsq.f(explainer, X, y)
+# Using the shorter alias rsq() (same as qshap_rsq)
+phi_rsq <- rsq(explainer, X, y)
 
 # Calculate model R^2 for verification
 ypred <- predict(lgb_model, X)
@@ -176,11 +176,11 @@ For large datasets, use parallel processing to speed up calculations:
 
 ```r
 # Use 4 cores for parallel processing
-# You can use rsq.f() as a shorter alias for qshap_rsq()
-phi_rsq <- rsq.f(explainer, X, y, ncore = 4)
+# You can use rsq() as a shorter alias for qshap_rsq()
+phi_rsq <- rsq(explainer, X, y, ncore = 4)
 
 # Use all available cores
-phi_rsq <- rsq.f(explainer, X, y, ncore = -1)
+phi_rsq <- rsq(explainer, X, y, ncore = -1)
 ```
 
 ### Sampling Large Datasets
@@ -188,11 +188,11 @@ phi_rsq <- rsq.f(explainer, X, y, ncore = -1)
 When working with very large datasets, you can sample a subset:
 
 ```r
-# Sample 512 observations using rsq.f() (shorter alias)
-phi_rsq <- rsq.f(explainer, X, y, nsample = 512, random_state = 42)
+# Sample 512 observations using rsq() (shorter alias)
+phi_rsq <- rsq(explainer, X, y, nsample = 512, random_state = 42)
 
 # Or use a fraction of the data
-phi_rsq <- rsq.f(explainer, X, y, nfrac = 0.1, random_state = 42)
+phi_rsq <- rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
 ```
 
 ### Visualization Options
@@ -236,11 +236,11 @@ vis$gcorr(phi_rsq, label = feature_names, rotation=45)
   - Returns a `qshapr_tree_explainer` object with `print()` and `summary()` methods
 - `qshap_rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
   - Returns a numeric vector (for backward compatibility)
-  - **Shorter alias: `rsq.f()`** - Use this for more concise code!
+  - **Shorter alias: `rsq()`** - Use this for more concise code!
 - `qshap_result(rsq, feature_names, ...)`: Create a Q-SHAP result object
   - Returns a `qshap_result` object with `print()`, `summary()`, and `as.data.frame()` methods
 - `qshap_loss(explainer, X, y)`: Calculate feature-specific loss contributions
-  - **Shorter alias: `loss.f()`** - Use this for more concise code!
+  - **Shorter alias: `loss()`** - Use this for more concise code!
 
 ### S3 Classes
 
@@ -270,8 +270,8 @@ summary(explainer)
 Stores Q-SHAP R² results with rich metadata and convenient methods.
 
 ```r
-# Create from qshap_rsq output or use the shorter rsq.f()
-phi_rsq <- rsq.f(explainer, X, y)
+# Create from qshap_rsq output or use the shorter rsq()
+phi_rsq <- rsq(explainer, X, y)
 result <- qshap_result(
   rsq = phi_rsq,
   feature_names = colnames(X),
