@@ -158,7 +158,7 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' @param explainer A qshapr_tree_explainer object created by \code{gazer()}
  #' @param x Feature matrix or data frame with n samples and p features
  #' @param y Response vector of length n
- #' @param loss_out Logical; if TRUE, returns both R-squared values and loss matrix
+ #' @param local Logical; if TRUE, returns both R-squared values and loss matrix
  #' @param sd_out Logical; if TRUE, returns standard deviations of R-squared estimates
  #' @param ci_out Logical; if TRUE, returns Wald-style confidence intervals for each feature's R-squared (normal approximation using sd_rsq)
  #' @param level Confidence level for the intervals (default 0.95)
@@ -168,8 +168,8 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' @param ncore Number of cores for parallel processing. Use -1 for all available cores, 
  #'   or a positive integer. Default is 1 (no parallelization)
  #' 
- #' @return If \code{loss_out=FALSE} (default), returns a numeric vector of length p 
- #'   containing feature-specific R-squared values. If \code{loss_out=TRUE}, returns 
+ #' @return If \code{local=FALSE} (default), returns a numeric vector of length p 
+ #'   containing feature-specific R-squared values. If \code{local=TRUE}, returns 
  #'   a list with components \code{rsq} (the R-squared vector) and \code{loss} 
  #'   (an n x p matrix of loss contributions). When \code{ci_out=TRUE}, the returned list
  #'   also contains \code{ci_lower} and \code{ci_upper} vectors representing Wald-style confidence intervals.
@@ -203,7 +203,7 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' }
  #' 
  #' @export 
-qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL, sd_out = TRUE,
+qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = TRUE,
                       ci_out = TRUE, level = 0.95,
                       nfrac = NULL, random_state = 42,
                       ncore = 1L) {
@@ -274,7 +274,7 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL, sd_out 
       ci <- NULL
     }
 
-    if (loss_out) {
+    if (local) {
       out <- list(rsq = rsq, loss = loss, sd_rsq = sd_rsq)
     } else {
       out <- list(rsq = rsq, sd_rsq = sd_rsq)
@@ -300,14 +300,14 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL, sd_out 
   # Export needed data once (avoid resending for every task)
   parallel::clusterExport(
     cl,
-    varlist = c("x", "y", "explainer", "y_mean_ori", "idx_chunks", "loss_out"),
+    varlist = c("x", "y", "explainer", "y_mean_ori", "idx_chunks", "local"),
     envir = environment()
   )
 
   worker <- function(idx) {
   lc <- qshapr::qshap_loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
 
-  if (loss_out) {
+  if (local) {
     # keep full chunk loss matrix
     return(lc)
   } else {
@@ -322,7 +322,7 @@ qshap_rsq <- function(explainer, x, y, loss_out = FALSE, nsample = NULL, sd_out 
 
   results <- parallel::parLapply(cl, idx_chunks, worker)
 
-if (loss_out) {
+if (local) {
   # Combine full loss matrix
   loss <- do.call(rbind, results)
   n_all <- nrow(loss)

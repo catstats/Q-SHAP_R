@@ -64,7 +64,7 @@ explainer <- gazer(lgb_model)
 start_time <- Sys.time()
 
 # Calculate Q-SHAP R-squared
-qshap_result <- qshap_rsq(explainer, X, y, loss_out = TRUE)
+qshap_result <- qshap_rsq(explainer, X, y, local = TRUE)
 rsq_res <- qshap_result$rsq
 
 end_time <- Sys.time()
