@@ -74,7 +74,7 @@ tryCatch({
   X_test <- X[1:10, ]
   y_test <- y[1:10]
   
-  qshap_result <- qshap_rsq(explainer, X_test, y_test, loss_out = TRUE)
+  qshap_result <- qshap_rsq(explainer, X_test, y_test, local = TRUE)
   
   print("Q-SHAP R-squared calculation successful!")
   print(paste("R-squared values:", paste(round(qshap_result$rsq[1:5], 4), collapse = ", ")))
