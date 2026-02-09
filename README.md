@@ -288,6 +288,15 @@ df <- as.data.frame(result)
 
 ### Visualization Functions
 
+The recommended way to visualize Q-SHAP results is using the standard R `plot()` method:
+
+- `plot(x, type = "rsq", ...)`: Bar plot of R² values (default)
+- `plot(x, type = "elbow", ...)`: Elbow plot of top features
+- `plot(x, type = "cumu", ...)`: Cumulative explained variance plot
+- `plot(x, type = "gcorr", ...)`: Generalized correlation plot
+
+For backward compatibility, the legacy `vis$*` interface is also available:
+
 - `vis$rsq()`: Bar plot of R² values
 - `vis$elbow()`: Elbow plot of top features
 - `vis$cumu()`: Cumulative explained variance plot
