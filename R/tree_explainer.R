@@ -477,3 +477,27 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
     loss = result$loss
   )
 }
+
+#' Alias for qshap_loss
+#'
+#' This is a convenience alias for \code{qshap_loss()} that provides a shorter
+#' function name for calculating feature-specific loss contributions.
+#'
+#' @inheritParams qshap_loss
+#' @return A matrix of loss contributions with dimensions (n_samples, n_features)
+#'
+#' @examples
+#' \dontrun{
+#' # Train a model
+#' model <- xgboost(X, y, nrounds = 100)
+#' explainer <- gazer(model)
+#'
+#' # Calculate loss contributions using the shorter alias
+#' loss_matrix <- loss(explainer, X, y)
+#' }
+#'
+#' @seealso \code{\link{qshap_loss}}
+#' @export
+loss <- function(explainer, x, y, y_mean_ori = NULL) {
+  qshap_loss(explainer, x, y, y_mean_ori)
+}
