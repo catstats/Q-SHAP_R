@@ -12,3 +12,6 @@ _codeql_detected_source_root
 *.pdf*
 *.json*
 *.out*
+
+# test files
+tests/test_plot_method.R

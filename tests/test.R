@@ -117,25 +117,26 @@ cat("Model R^2 is:", model_rsq, "\n")
 # Visualization
 
 # rsq bar plot
-qshapr::vis$rsq(rsq_contributions)
+plot(rsq_contributions)
 
 # change palette
-qshapr::vis$rsq(rsq_contributions, color_map_name = "viridis")
-qshapr::vis$rsq(rsq_contributions, color_map_name = "inferno")
+plot(rsq_contributions, color_map_name = "viridis")
+plot(rsq_contributions, color_map_name = "inferno")
 
 # custom labels
-feature_names <- paste0("f", seq_along(rsq_contributions))
-qshapr::vis$rsq(rsq_contributions, label = feature_names, rotation = 45)
+feature_names <- paste0("f", seq_along(rsq_contributions$rsq))
+plot(rsq_contributions, label = feature_names, rotation = 45)
 
 # horizontal plot and save
-qshapr::vis$rsq(rsq_contributions, horizontal = TRUE, model_rsq = FALSE, max_feature = 15, save_name = "rsq_eg")
+plot(rsq_contributions, horizontal = TRUE, model_rsq = FALSE, max_feature = 15, save_name = "rsq_eg")
 
 # elbow plot
-top_idx <- qshapr::vis$elbow(rsq_contributions, max_comp = 15, label=feature_names)
+top_idx <- plot(rsq_contributions, type = "elbow", max_comp = 15, label=feature_names)
 
 # cumulative explained
-qshapr::vis$cumu(rsq_contributions, max_comp = 15, save_name = "cumu_eg")
+plot(rsq_contributions, type = "cumu", max_comp = 15, save_name = "cumu_eg")
 
 # interactive loss explorer
 # (this launches a small shiny app)
+# Note: vis$loss still uses the old interface
 qshapr::vis$loss(rsq_cons[[2]])

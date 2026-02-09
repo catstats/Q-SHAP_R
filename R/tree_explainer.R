@@ -284,6 +284,7 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
       out$ci_upper <- ci$ci_upper
       out$level <- level
     }
+    class(out) <- c("qshap_rsq", "list")
     return(out)
   }
 
@@ -348,6 +349,7 @@ if (local) {
     out$ci_upper <- ci$ci_upper
     out$level <- level
   }
+  class(out) <- c("qshap_rsq", "list")
   return(out)
 
 } else {
@@ -378,6 +380,7 @@ if (local) {
     out$ci_upper <- ci$ci_upper
     out$level <- level
   }
+  class(out) <- c("qshap_rsq", "list")
   return(out)
 }
 

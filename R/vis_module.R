@@ -422,3 +422,86 @@ vis$gcorr <- function(
     save_name = save_name
   )
 }
+
+#' Plot method for Q-SHAP results
+#' 
+#' S3 plot method for visualizing Q-SHAP R-squared results returned by \code{qshap_rsq()}.
+#' This provides a standard R plotting interface following the conventional \code{plot()} 
+#' pattern used throughout R.
+#' 
+#' @param x A qshap_rsq object (returned by \code{qshap_rsq()}) or a numeric vector
+#'   of R-squared values
+#' @param type Character string specifying the plot type:
+#'   \describe{
+#'     \item{"rsq"}{Bar plot of feature-specific R-squared values (default)}
+#'     \item{"elbow"}{Elbow plot showing top contributing features}
+#'     \item{"cumu"}{Cumulative explained variance plot}
+#'     \item{"gcorr"}{Generalized correlation plot (square root of R-squared)}
+#'   }
+#' @param ... Additional arguments passed to the underlying visualization function
+#'   (e.g., \code{label}, \code{rotation}, \code{color_map_name}, \code{max_feature})
+#' 
+#' @details
+#' This is the standard R plotting interface for Q-SHAP results. It wraps the
+#' \code{vis$*} family of functions into a single generic \code{plot()} method,
+#' following R's standard conventions.
+#' 
+#' The function automatically extracts the \code{$rsq} component from the qshap_rsq
+#' object if needed.
+#' 
+#' Common additional arguments include:
+#' \itemize{
+#'   \item{\code{label}}{Character vector of feature names for axis labels}
+#'   \item{\code{rotation}}{Angle to rotate x-axis labels (e.g., 45)}
+#'   \item{\code{color_map_name}}{Color palette name (e.g., "Blues", "viridis")}
+#'   \item{\code{max_feature}}{Maximum number of features to display}
+#'   \item{\code{max_comp}}{Maximum number of components for elbow/cumu plots}
+#' }
+#' 
+#' @return The ggplot2 plot object (invisibly)
+#' 
+#' @examples
+#' \dontrun{
+#' # After computing Q-SHAP values
+#' explainer <- gazer(model)
+#' phi_rsq <- qshap_rsq(explainer, X, y)
+#' 
+#' # Standard bar plot (default)
+#' plot(phi_rsq)
+#' 
+#' # With custom labels and rotation
+#' plot(phi_rsq, label = colnames(X), rotation = 45)
+#' 
+#' # Elbow plot
+#' plot(phi_rsq, type = "elbow", max_comp = 10)
+#' 
+#' # Cumulative explained variance
+#' plot(phi_rsq, type = "cumu", max_comp = 15)
+#' 
+#' # Generalized correlation
+#' plot(phi_rsq, type = "gcorr", color_map_name = "viridis")
+#' }
+#' 
+#' @export
+plot.qshap_rsq <- function(x, type = c("rsq", "elbow", "cumu", "gcorr"), ...) {
+  # Extract rsq values if x is a qshap_rsq object
+  if (is.list(x) && "rsq" %in% names(x)) {
+    rsq_values <- x$rsq
+  } else {
+    rsq_values <- x
+  }
+  
+  type <- match.arg(type)
+  
+  # Call the appropriate vis function and return invisibly
+  # (vis functions already return invisible(plot), but being explicit here)
+  invisible(
+    switch(type,
+      rsq = vis$rsq(rsq_values, ...),
+      elbow = vis$elbow(rsq_values, ...),
+      cumu = vis$cumu(rsq_values, ...),
+      gcorr = vis$gcorr(rsq_values, ...)
+    )
+  )
+}
+

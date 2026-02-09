@@ -79,7 +79,7 @@ print(paste("Total R^2:", round(sum(phi_rsq), 4)))
 print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize feature-specific R^2
-vis$rsq(
+plot(
   phi_rsq,
   label = colnames(X),
   rotation = 45,
@@ -142,7 +142,7 @@ print(paste("Total R^2:", round(sum(phi_rsq), 4)))
 print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize
-vis$rsq(
+plot(
   phi_rsq,
   label = colnames(X),
   rotation=45,
@@ -179,25 +179,33 @@ phi_rsq <- qshap_rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
 
 ### Visualization Options
 
-The package provides multiple visualization functions:
+The package provides multiple visualization functions accessible through the `plot()` method:
 
 ```r
 # Standard bar plot
 feature_names <- colnames(X)
 
-vis$rsq(phi_rsq, label = feature_names, color_map_name = "Blues", rotation=45)
+plot(phi_rsq, label = feature_names, color_map_name = "Blues", rotation=45)
 
 # Horizontal bar plot
-vis$rsq(phi_rsq, label = feature_names, horizontal = TRUE)
+plot(phi_rsq, label = feature_names, horizontal = TRUE)
 
 # Elbow plot (top features)
-vis$elbow(phi_rsq, label = feature_names, max_comp = 10, rotation=45)
+plot(phi_rsq, type = "elbow", label = feature_names, max_comp = 10, rotation=45)
 
 # Cumulative explained variance
-vis$cumu(phi_rsq, label = feature_names, max_comp = 10)
+plot(phi_rsq, type = "cumu", label = feature_names, max_comp = 10)
 
 # Generalized correlation (sqrt of R²)
-vis$gcorr(phi_rsq, label = feature_names, rotation=45)
+plot(phi_rsq, type = "gcorr", label = feature_names, rotation=45)
+```
+
+**Note:** The legacy `vis$*` interface is still supported for backward compatibility:
+```r
+vis$rsq(phi_rsq, label = feature_names)
+vis$elbow(phi_rsq, label = feature_names, max_comp = 10)
+vis$cumu(phi_rsq, label = feature_names, max_comp = 10)
+vis$gcorr(phi_rsq, label = feature_names)
 ```
 
 ## Citation
@@ -279,6 +287,15 @@ df <- as.data.frame(result)
 ```
 
 ### Visualization Functions
+
+The recommended way to visualize Q-SHAP results is using the standard R `plot()` method:
+
+- `plot(x, type = "rsq", ...)`: Bar plot of R² values (default)
+- `plot(x, type = "elbow", ...)`: Elbow plot of top features
+- `plot(x, type = "cumu", ...)`: Cumulative explained variance plot
+- `plot(x, type = "gcorr", ...)`: Generalized correlation plot
+
+For backward compatibility, the legacy `vis$*` interface is also available:
 
 - `vis$rsq()`: Bar plot of R² values
 - `vis$elbow()`: Elbow plot of top features
