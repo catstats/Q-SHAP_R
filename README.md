@@ -64,7 +64,20 @@ model <- xgboost(
 # Create Q-SHAP explainer
 explainer <- gazer(model)
 
-# Calculate feature-specific R^2 values
+# Calculate feature-specific R^2 values using the rsq() wrapper
+# This returns a qshap_result object with enhanced formatting
+result <- rsq(explainer, X, y, nsample=1024)
+
+# Print shows top 10 features automatically
+print(result)
+
+# Get detailed summary with custom number of top features
+summary(result, n = 5)
+
+# Convert to data frame for further analysis
+df <- as.data.frame(result)
+
+# Alternatively, use qshap_rsq() for the raw numeric vector
 phi_rsq <- qshap_rsq(explainer, X, y, nsample=1024)
 
 # Calculate model R^2 for verification
@@ -73,9 +86,7 @@ sst <- sum((y - mean(y))^2)
 sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse/sst
 
-# Print R^2 values for each feature
-print(phi_rsq)
-print(paste("Total R^2:", round(sum(phi_rsq), 4)))
+print(paste("Total R^2:", round(sum(phi_rsq$rsq), 4)))
 print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize feature-specific R^2
@@ -224,8 +235,13 @@ vis$gcorr(phi_rsq, label = feature_names)
 
 - `gazer(model)`: Create a Q-SHAP explainer from a trained model
   - Returns a `qshapr_tree_explainer` object with `print()` and `summary()` methods
+- `rsq(explainer, X, y, ...)`: **[Recommended]** Calculate feature-specific R² values
+  - Returns a `qshap_result` object with enhanced formatting and methods
+  - Automatically extracts feature names and includes metadata
+  - Provides `print()`, `summary()`, and `as.data.frame()` methods
 - `qshap_rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
-  - Returns a numeric vector (for backward compatibility)
+  - Returns a `qshap_rsq` object (list) for backward compatibility
+  - Use `rsq()` for a more user-friendly interface
 - `qshap_result(rsq, feature_names, ...)`: Create a Q-SHAP result object
   - Returns a `qshap_result` object with `print()`, `summary()`, and `as.data.frame()` methods
 - `qshap_loss(explainer, X, y)`: Calculate feature-specific loss contributions
@@ -258,15 +274,18 @@ summary(explainer)
 Stores Q-SHAP R² results with rich metadata and convenient methods.
 
 ```r
-# Create from qshap_rsq output
+# Recommended: Use rsq() wrapper for automatic creation
+result <- rsq(explainer, X, y)
+
+# Alternative: Create from qshap_rsq output
 phi_rsq <- qshap_rsq(explainer, X, y)
 result <- qshap_result(
-  rsq = phi_rsq,
+  rsq = phi_rsq$rsq,
   feature_names = colnames(X),
   n_samples = nrow(X)
 )
 
-# Print top contributing features
+# Print top contributing features (default: top 10)
 print(result)
 #> <qshap_result>
 #>   Total R²: 0.8523
@@ -279,11 +298,29 @@ print(result)
 #>   Latitude     0.1892
 #>   ...
 
-# Get detailed statistics
-summary(result)
+# Get detailed statistics with custom number of top features
+summary(result, n = 5)  # Show top 5 features
 
 # Convert to data frame for further analysis
 df <- as.data.frame(result)
+```
+
+#### `qshap_rsq`
+
+The `qshap_rsq` object supports the new `summary()` method:
+
+```r
+# Calculate R² contributions
+phi_rsq <- qshap_rsq(explainer, X, y)
+
+# Print basic info
+print(phi_rsq)
+#> qshap_rsq object
+#> - rsq length: 8
+
+# Get detailed summary with top features
+summary(phi_rsq, n = 10)  # Show top 10 features (default)
+summary(phi_rsq, n = 5)   # Show top 5 features
 ```
 
 ### Visualization Functions

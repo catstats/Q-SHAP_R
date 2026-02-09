@@ -385,3 +385,95 @@ if (local) {
 }
 
 }
+
+#' Wrapper function for qshap_rsq returning a qshap_result object
+#'
+#' This is a convenience wrapper around \code{qshap_rsq} that returns a 
+#' \code{qshap_result} object with better formatting and additional metadata.
+#' The \code{qshap_result} object includes feature names, total R², sample counts,
+#' and provides enhanced \code{print()}, \code{summary()}, and \code{as.data.frame()}
+#' methods for easier analysis.
+#'
+#' @inheritParams qshap_rsq
+#' @param feature_names Character vector of feature names. If NULL, uses column names from x.
+#' @return A \code{qshap_result} object containing:
+#'   \itemize{
+#'     \item \code{rsq}: Numeric vector of feature-specific R² values
+#'     \item \code{feature_names}: Character vector of feature names
+#'     \item \code{total_rsq}: Total R² (sum of feature-specific values)
+#'     \item \code{n_samples}: Number of samples
+#'     \item \code{n_features}: Number of features
+#'     \item \code{loss}: Loss matrix (if local=TRUE)
+#'   }
+#'
+#' @details
+#' This wrapper provides a more user-friendly interface than \code{qshap_rsq}:
+#' \itemize{
+#'   \item Automatically extracts feature names from the input data
+#'   \item Returns a structured object with metadata
+#'   \item Provides enhanced printing with top features displayed by default
+#'   \item Includes a comprehensive \code{summary()} method
+#'   \item Can be easily converted to a data frame with \code{as.data.frame()}
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # Train a model
+#' model <- xgboost(X, y, nrounds = 100)
+#' explainer <- gazer(model)
+#'
+#' # Calculate R² contributions
+#' result <- rsq(explainer, X, y)
+#' print(result)  # Shows top 10 features by default
+#' summary(result)  # Detailed summary
+#' df <- as.data.frame(result)  # Convert to data frame
+#'
+#' # With custom feature names
+#' result <- rsq(explainer, X, y, feature_names = c("Age", "Income", "Score"))
+#'
+#' # With parallel processing
+#' result <- rsq(explainer, X, y, ncore = 4)
+#' }
+#'
+#' @seealso \code{\link{qshap_rsq}}, \code{\link{qshap_result}}
+#' @export
+rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = NULL, 
+                sd_out = TRUE, ci_out = TRUE, level = 0.95, nfrac = NULL, 
+                random_state = 42, ncore = 1L) {
+  
+  # Call qshap_rsq
+  result <- qshap_rsq(
+    explainer = explainer,
+    x = x,
+    y = y,
+    local = local,
+    nsample = nsample,
+    sd_out = sd_out,
+    ci_out = ci_out,
+    level = level,
+    nfrac = nfrac,
+    random_state = random_state,
+    ncore = ncore
+  )
+  
+  # Extract feature names
+  if (is.null(feature_names)) {
+    feature_names <- colnames(x)
+    if (is.null(feature_names)) {
+      feature_names <- paste0("Feature_", seq_len(ncol(x)))
+    }
+  }
+  
+  # Add names to rsq vector
+  names(result$rsq) <- feature_names
+  
+  # Create qshap_result object
+  qshap_result(
+    rsq = result$rsq,
+    feature_names = feature_names,
+    total_rsq = sum(result$rsq, na.rm = TRUE),
+    n_samples = nrow(x),
+    n_features = length(result$rsq),
+    loss = result$loss
+  )
+}

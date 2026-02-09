@@ -98,6 +98,91 @@ print.qshap_rsq <- function(x, ...) {
   invisible(x)
 }
 
+#' Summary method for qshap_rsq objects
+#'
+#' Provides a summary of the qshap_rsq object, showing the top features by R-squared contribution
+#'
+#' @param object A \code{qshap_rsq} object
+#' @param n Integer number of top features to display (default: 10)
+#' @param ... Additional arguments (currently unused)
+#' @export
+summary.qshap_rsq <- function(object, n = 10, ...) {
+  cat("Q-SHAP R² Summary\n")
+  cat("=================\n\n")
+  
+  if (is.null(object$rsq)) {
+    cat("No R² values available in this object.\n")
+    return(invisible(object))
+  }
+  
+  rsq <- object$rsq
+  total_rsq <- sum(rsq, na.rm = TRUE)
+  
+  cat("Overall Statistics:\n")
+  cat("  Total R²:", round(total_rsq, 6), "\n")
+  cat("  Number of features:", length(rsq), "\n")
+  
+  # Add SD and CI information if available
+  if (!is.null(object$sd_rsq)) {
+    cat("  Standard errors: Available\n")
+  }
+  if (!is.null(object$ci_lower) && !is.null(object$ci_upper)) {
+    cat("  Confidence intervals:", paste0(round(object$level * 100, 1), "%"), "\n")
+  }
+  if (!is.null(object$loss)) {
+    cat("  Loss matrix dim:", paste(dim(object$loss), collapse = " x "), "\n")
+  }
+  
+  cat("\nR² Distribution:\n")
+  cat("  Min:", round(min(rsq, na.rm = TRUE), 6), "\n")
+  cat("  Q1:", round(quantile(rsq, 0.25, na.rm = TRUE), 6), "\n")
+  cat("  Median:", round(median(rsq, na.rm = TRUE), 6), "\n")
+  cat("  Mean:", round(mean(rsq, na.rm = TRUE), 6), "\n")
+  cat("  Q3:", round(quantile(rsq, 0.75, na.rm = TRUE), 6), "\n")
+  cat("  Max:", round(max(rsq, na.rm = TRUE), 6), "\n")
+  
+  # Count significant features
+  sig_features <- sum(rsq > 0.01, na.rm = TRUE)
+  cat("\nSignificant Features (R² > 0.01):", sig_features, "\n")
+  
+  # Show top N features
+  cat("\nTop", min(n, length(rsq)), "features by R²:\n")
+  
+  # Get feature names if available (from names attribute)
+  feature_names <- names(rsq)
+  if (is.null(feature_names)) {
+    feature_names <- paste0("Feature_", seq_along(rsq))
+  }
+  
+  # Create data frame and sort
+  df <- data.frame(
+    Feature = feature_names,
+    R_squared = rsq,
+    stringsAsFactors = FALSE
+  )
+  
+  # Add SD and CI columns if available
+  if (!is.null(object$sd_rsq)) {
+    df$SE <- object$sd_rsq
+  }
+  if (!is.null(object$ci_lower) && !is.null(object$ci_upper)) {
+    df$CI_lower <- object$ci_lower
+    df$CI_upper <- object$ci_upper
+  }
+  
+  df <- df[order(df$R_squared, decreasing = TRUE), ]
+  df <- head(df, n)
+  
+  # Print as formatted table
+  print(df, row.names = FALSE, digits = 4)
+  
+  if (length(rsq) > n) {
+    cat("... and", length(rsq) - n, "more features\n")
+  }
+  
+  invisible(object)
+}
+
 # helper: ensure palette maps low->light and high->dark (so large values are darker)
 .vis_high_dark <- function(pal) {
   if (length(pal) < 2) return(pal)
