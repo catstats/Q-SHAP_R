@@ -176,4 +176,22 @@ cat("\nSummary with confidence intervals:\n")
 summary(rsq_with_ci, n = 5)
 
 cat("\n=== All tests completed successfully ===\n")
+
+# ============================================================================
+# Test new loss() alias
+# ============================================================================
+
+cat("\n=== Testing new loss() alias ===\n")
+
+# Test loss() alias - should work the same as qshap_loss()
+loss_matrix_alias <- qshapr::loss(explainer, X, y)
+cat("\nLoss matrix dimensions using loss():\n")
+cat(paste("Dimensions:", paste(dim(loss_matrix_alias), collapse = " x "), "\n"))
+
+# Compare with qshap_loss()
+loss_matrix_original <- qshapr::qshap_loss(explainer, X, y)
+cat("Are results identical?", identical(loss_matrix_alias, loss_matrix_original), "\n")
+
+cat("\n=== loss() alias test completed successfully ===\n")
+
 qshapr::vis$loss(rsq_cons[[2]])

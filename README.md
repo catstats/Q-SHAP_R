@@ -80,6 +80,9 @@ df <- as.data.frame(result)
 # Alternatively, use qshap_rsq() for the raw numeric vector
 phi_rsq <- qshap_rsq(explainer, X, y, nsample=1024)
 
+# Or calculate loss contributions directly using loss() alias
+loss_matrix <- loss(explainer, X, y)
+
 # Calculate model R^2 for verification
 ypred <- predict(model, as.matrix(X))
 sst <- sum((y - mean(y))^2)
@@ -239,12 +242,16 @@ vis$gcorr(phi_rsq, label = feature_names)
   - Returns a `qshap_result` object with enhanced formatting and methods
   - Automatically extracts feature names and includes metadata
   - Provides `print()`, `summary()`, and `as.data.frame()` methods
+  - Alias for `qshap_rsq()` with enhanced output
 - `qshap_rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
   - Returns a `qshap_rsq` object (list) for backward compatibility
   - Use `rsq()` for a more user-friendly interface
 - `qshap_result(rsq, feature_names, ...)`: Create a Q-SHAP result object
   - Returns a `qshap_result` object with `print()`, `summary()`, and `as.data.frame()` methods
+- `loss(explainer, X, y)`: **[Recommended]** Calculate feature-specific loss contributions
+  - Alias for `qshap_loss()` with shorter function name
 - `qshap_loss(explainer, X, y)`: Calculate feature-specific loss contributions
+  - Returns a matrix of loss contributions
 
 ### S3 Classes
 
