@@ -36,7 +36,7 @@ cat("X dim:", paste(dim(X), collapse=" x "), "\n")
 cat("y len:", length(y), "\n")
 
 max_depth    <- 2L
-n_estimators <- 100L
+n_estimators <- 50L
 
 dtrain <- lgb.Dataset(data = X, label = y) 
 
@@ -117,24 +117,24 @@ cat("Model R^2 is:", model_rsq, "\n")
 # Visualization
 
 # rsq bar plot
-plot(rsq_contributions)
+plot(rsq_cons)
 
 # change palette
-plot(rsq_contributions, color_map_name = "viridis")
-plot(rsq_contributions, color_map_name = "inferno")
+plot(rsq_cons, color_map_name = "viridis")
+plot(rsq_cons, color_map_name = "inferno")
 
 # custom labels
-feature_names <- paste0("f", seq_along(rsq_contributions$rsq))
-plot(rsq_contributions, label = feature_names, rotation = 45)
+feature_names <- paste0("f", seq_along(rsq_cons$rsq))
+plot(rsq_cons, label = feature_names, rotation = 45)
 
 # horizontal plot and save
-plot(rsq_contributions, horizontal = TRUE, model_rsq = FALSE, max_feature = 15, save_name = "rsq_eg")
+plot(rsq_cons, horizontal = TRUE, model_rsq = FALSE, max_feature = 15, save_name = "rsq_eg")
 
 # elbow plot
-top_idx <- plot(rsq_contributions, type = "elbow", max_comp = 15, label=feature_names)
+top_idx <- plot(rsq_cons, type = "elbow", max_comp = 15, label=feature_names)
 
 # cumulative explained
-plot(rsq_contributions, type = "cumu", max_comp = 15, save_name = "cumu_eg")
+plot(rsq_cons, type = "cumu", max_comp = 15, save_name = "cumu_eg")
 
 # interactive loss explorer
 # (this launches a small shiny app)

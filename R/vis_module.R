@@ -30,6 +30,74 @@ vis <- new.env(parent = emptyenv())
   viridisLite::viridis(n)
 }
 
+#' Plot method for qshap_rsq objects
+#'
+#' This S3 method enables `plot(x, ...)` where `x` is a `qshap_rsq` object.
+#' It dispatches to the visualization functions in `vis`.
+#'
+#' @param x A `qshap_rsq` object.
+#' @param y Not used.
+#' @param type Plot type: one of "rsq", "elbow", "cumu", "gcorr", or "loss".
+#' @param ... Passed to the underlying visualization function.
+#'
+#' @return A ggplot2 object (invisibly).
+#'
+#' @method plot qshap_rsq
+#' @export
+plot.qshap_rsq <- function(x, y = NULL,
+                          type = c("rsq", "elbow", "cumu", "gcorr", "loss"), ...) {
+  type <- match.arg(type)
+
+  # Try common field names first
+  rsq_values <- NULL
+  if (!is.null(x$rsq)) {
+    rsq_values <- x$rsq
+  } else if (!is.null(x$phi_rsq)) {
+    rsq_values <- x$phi_rsq
+  } else if (!is.null(x$contrib)) {
+    rsq_values <- x$contrib
+  } else if (is.numeric(x) && is.vector(x)) {
+    rsq_values <- x
+  } else {
+    # fallback: first numeric vector element in the list
+    num_elts <- vapply(x, function(z) is.numeric(z) && is.vector(z), logical(1))
+    if (any(num_elts)) rsq_values <- x[[which(num_elts)[1]]]
+  }
+
+  if (identical(type, "loss")) {
+    if (!is.null(x$loss)) {
+      return(invisible(vis$loss(x$loss, ...)))
+    }
+    stop("type='loss' requires a qshap_rsq object with a $loss matrix (run qshap_rsq(..., local=TRUE)).")
+  }
+
+  if (is.null(rsq_values)) {
+    stop("Cannot find R² contributions in this qshap_rsq object. Expected one of: $rsq, $phi_rsq, $contrib.")
+  }
+
+  rsq_values <- as.numeric(rsq_values)
+
+  invisible(
+    switch(type,
+           rsq = vis$rsq(rsq_values, ...),
+           elbow = vis$elbow(rsq_values, ...),
+           cumu = vis$cumu(rsq_values, ...),
+           gcorr = vis$gcorr(rsq_values, ...))
+  )
+}
+
+#' @export
+print.qshap_rsq <- function(x, ...) {
+  cat("qshap_rsq object\n")
+  if (!is.null(x$rsq)) {
+    cat("- rsq length:", length(x$rsq), "\n")
+  }
+  if (!is.null(x$loss)) {
+    cat("- loss dim:", paste(dim(x$loss), collapse = " x "), "\n")
+  }
+  invisible(x)
+}
+
 # helper: ensure palette maps low->light and high->dark (so large values are darker)
 .vis_high_dark <- function(pal) {
   if (length(pal) < 2) return(pal)
@@ -423,78 +491,58 @@ vis$gcorr <- function(
   )
 }
 
-#' Plot method for Q-SHAP results
-#' 
-#' S3 plot method for visualizing Q-SHAP R-squared results returned by \code{qshap_rsq()}.
-#' This provides a standard R plotting interface following the conventional \code{plot()} 
-#' pattern used throughout R.
-#' 
-#' @param x A qshap_rsq object (returned by \code{qshap_rsq()}) or a numeric vector
-#'   of R-squared values
-#' @param type Character string specifying the plot type:
-#'   \describe{
-#'     \item{"rsq"}{Bar plot of feature-specific R-squared values (default)}
-#'     \item{"elbow"}{Elbow plot showing top contributing features}
-#'     \item{"cumu"}{Cumulative explained variance plot}
-#'     \item{"gcorr"}{Generalized correlation plot (square root of R-squared)}
-#'   }
-#' @param ... Additional arguments passed to the underlying visualization function
-#'   (e.g., \code{label}, \code{rotation}, \code{color_map_name}, \code{max_feature})
-#' 
-#' @details
-#' This is the standard R plotting interface for Q-SHAP results. It wraps the
-#' \code{vis$*} family of functions into a single generic \code{plot()} method,
-#' following R's standard conventions.
-#' 
-#' The function automatically extracts the \code{$rsq} component from the qshap_rsq
-#' object if needed.
-#' 
-#' Common additional arguments include:
-#' \itemize{
-#'   \item{\code{label}}{Character vector of feature names for axis labels}
-#'   \item{\code{rotation}}{Angle to rotate x-axis labels (e.g., 45)}
-#'   \item{\code{color_map_name}}{Color palette name (e.g., "Blues", "viridis")}
-#'   \item{\code{max_feature}}{Maximum number of features to display}
-#'   \item{\code{max_comp}}{Maximum number of components for elbow/cumu plots}
-#' }
-#' 
+
+#' Plot Q-SHAP R-squared contributions
+#'
+#' Convenience wrapper that works for both a `qshap_rsq` object and a plain
+#' numeric vector of contributions. Use this if you have a numeric vector and
+#' still want to pass arguments like `color_map_name`.
+#'
+#' @param x A `qshap_rsq` object (recommended) or a numeric vector.
+#' @param type Plot type; see `plot.qshap_rsq`. Use `"loss"` to launch the interactive explorer (requires a loss matrix).
+#' @param ... Additional arguments passed to the underlying visualization
+#'   function (e.g., `label`, `rotation`, `color_map_name`, `max_feature`).
+#'
 #' @return The ggplot2 plot object (invisibly)
-#' 
+#'
 #' @examples
 #' \dontrun{
-#' # After computing Q-SHAP values
-#' explainer <- gazer(model)
-#' phi_rsq <- qshap_rsq(explainer, X, y)
-#' 
-#' # Standard bar plot (default)
-#' plot(phi_rsq)
-#' 
-#' # With custom labels and rotation
-#' plot(phi_rsq, label = colnames(X), rotation = 45)
-#' 
-#' # Elbow plot
-#' plot(phi_rsq, type = "elbow", max_comp = 10)
-#' 
-#' # Cumulative explained variance
-#' plot(phi_rsq, type = "cumu", max_comp = 15)
-#' 
-#' # Generalized correlation
-#' plot(phi_rsq, type = "gcorr", color_map_name = "viridis")
+#' # Works on qshap_rsq objects
+#' plot_qshap(phi_rsq, color_map_name = "viridis")
+#'
+#' # Works on numeric vectors
+#' plot_qshap(rsq_contributions, color_map_name = "viridis")
+#'
+#' # Interactive loss explorer (requires local=TRUE)
+#' # rsq_cons <- qshap_rsq(explainer, X, y, local = TRUE)
+#' # plot_qshap(rsq_cons[[2]], type = "loss")
 #' }
-#' 
+#'
 #' @export
-plot.qshap_rsq <- function(x, type = c("rsq", "elbow", "cumu", "gcorr"), ...) {
-  # Extract rsq values if x is a qshap_rsq object
-  if (is.list(x) && "rsq" %in% names(x)) {
-    rsq_values <- x$rsq
-  } else {
-    rsq_values <- x
+plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "loss"), ...) {
+  # If x is a qshap_rsq object, reuse the S3 method
+  if (inherits(x, "qshap_rsq")) {
+    return(plot(x, type = type, ...))
   }
-  
+
+  # Otherwise treat x as a numeric vector and call vis functions directly
   type <- match.arg(type)
-  
-  # Call the appropriate vis function and return invisibly
-  # (vis functions already return invisible(plot), but being explicit here)
+
+  # Interactive loss explorer (Shiny)
+  # - If x is a qshap_rsq object with $loss, use x$loss
+  # - If x is already a loss matrix/array (n x p), use it directly
+  if (identical(type, "loss")) {
+    if (inherits(x, "qshap_rsq") && is.list(x) && !is.null(x$loss)) {
+      return(invisible(vis$loss(x$loss, ...)))
+    }
+    if (is.matrix(x) || is.array(x)) {
+      return(invisible(vis$loss(x, ...)))
+    }
+    stop("type='loss' expects a qshap_rsq object with $loss, or a loss matrix/array (n x p). If you used qshap_rsq(..., local=TRUE), pass rsq_cons[[2]] (the loss matrix).")
+  }
+
+  rsq_values <- as.numeric(x)
+
   invisible(
     switch(type,
       rsq = vis$rsq(rsq_values, ...),

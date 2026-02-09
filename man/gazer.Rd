@@ -36,4 +36,5 @@ model <- xgboost(data = X, label = y, nrounds = 10, verbose = 0)
 # Create explainer
 explainer <- gazer(model)
 }
+
 }

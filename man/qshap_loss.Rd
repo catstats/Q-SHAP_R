@@ -2,10 +2,23 @@
 % Please edit documentation in R/tree_explainer.R
 \name{qshap_loss}
 \alias{qshap_loss}
-\title{Q-SHAP Loss}
+\title{Calculate Q-SHAP Loss Contributions}
 \usage{
 qshap_loss(explainer, x, y, y_mean_ori = NULL)
 }
+\arguments{
+\item{explainer}{A qshapr_tree_explainer object created by \code{gazer()}}
+
+\item{x}{Feature matrix or data frame}
+
+\item{y}{Response vector}
+
+\item{y_mean_ori}{Optional pre-computed mean of y (for efficiency)}
+}
+\value{
+A matrix of loss contributions with dimensions (n_samples, n_features)
+}
 \description{
-Q-SHAP Loss
+Computes the feature-specific loss contributions using Q-SHAP decomposition.
+This is an internal function typically called by \code{qshap_rsq()}.
 }
