@@ -139,4 +139,41 @@ plot(rsq_cons, type = "cumu", max_comp = 15, save_name = "cumu_eg")
 # interactive loss explorer
 # (this launches a small shiny app)
 # Note: vis$loss still uses the old interface
+
+# ============================================================================
+# Test new rsq() wrapper and summary() methods
+# ============================================================================
+
+cat("\n=== Testing new rsq() wrapper ===\n")
+
+# Test rsq() wrapper with default arguments
+result <- qshapr::rsq(explainer, X, y)
+cat("\nTesting print method for qshap_result:\n")
+print(result)
+
+cat("\nTesting summary method for qshap_result (top 5):\n")
+summary(result, n = 5)
+
+# Convert to data frame
+df <- as.data.frame(result)
+cat("\nFirst few rows of data frame:\n")
+print(head(df, 5))
+
+# Test rsq() with custom feature names
+custom_names <- paste0("Feature_", 1:ncol(X))
+result_custom <- qshapr::rsq(explainer, X, y, feature_names = custom_names)
+cat("\nWith custom feature names:\n")
+print(result_custom)
+
+# Test summary method for qshap_rsq objects
+cat("\n=== Testing summary() for qshap_rsq objects ===\n")
+rsq_obj <- qshapr::qshap_rsq(explainer, X, y)
+summary(rsq_obj, n = 10)
+
+# Test with confidence intervals
+rsq_with_ci <- qshapr::qshap_rsq(explainer, X, y, ci_out = TRUE)
+cat("\nSummary with confidence intervals:\n")
+summary(rsq_with_ci, n = 5)
+
+cat("\n=== All tests completed successfully ===\n")
 qshapr::vis$loss(rsq_cons[[2]])
