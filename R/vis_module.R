@@ -493,11 +493,15 @@ plot.qshap_rsq <- function(x, type = c("rsq", "elbow", "cumu", "gcorr"), ...) {
   
   type <- match.arg(type)
   
-  switch(type,
-    rsq = vis$rsq(rsq_values, ...),
-    elbow = vis$elbow(rsq_values, ...),
-    cumu = vis$cumu(rsq_values, ...),
-    gcorr = vis$gcorr(rsq_values, ...)
+  # Call the appropriate vis function and return invisibly
+  # (vis functions already return invisible(plot), but being explicit here)
+  invisible(
+    switch(type,
+      rsq = vis$rsq(rsq_values, ...),
+      elbow = vis$elbow(rsq_values, ...),
+      cumu = vis$cumu(rsq_values, ...),
+      gcorr = vis$gcorr(rsq_values, ...)
+    )
   )
 }
 
