@@ -16,20 +16,3 @@
 \description{
 Provides a summary of the qshap_rsq object, showing the top features by R-squared contribution
 }
-\examples{
-\dontrun{
-# Calculate R² contributions
-phi_rsq <- qshap_rsq(explainer, X, y)
-
-# Get summary with default top 10 features
-summary(phi_rsq)
-
-# Show only top 5 features
-summary(phi_rsq, n = 5)
-
-# With confidence intervals
-phi_rsq_ci <- qshap_rsq(explainer, X, y, ci_out = TRUE)
-summary(phi_rsq_ci, n = 10)
-}
-
-}

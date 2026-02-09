@@ -55,8 +55,8 @@ y <- housing$median_house_value
 model <- xgboost(
   x = as.matrix(X),
   y =  y,
-  nrounds = 100,
-  max_depth = 3,
+  nrounds = 50,
+  max_depth = 2,
   learning_rate = 0.1,
   objective = "reg:squarederror",
 )
@@ -215,6 +215,7 @@ plot(phi_rsq, type = "gcorr", label = feature_names, rotation=45)
 ```
 
 **Note:** The legacy `vis$*` interface is still supported for backward compatibility:
+
 ```r
 vis$rsq(phi_rsq, label = feature_names)
 vis$elbow(phi_rsq, label = feature_names, max_comp = 10)

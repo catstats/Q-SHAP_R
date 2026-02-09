@@ -42,7 +42,8 @@ rsq(
 
 \item{random_state}{Integer seed for reproducible sampling}
 
-\item{ncore}{Integer number of cores for parallel processing. Use -1 for all available cores.}
+\item{ncore}{Number of cores for parallel processing. Use -1 for all available cores, 
+or a positive integer. Default is 1 (no parallelization)}
 }
 \value{
 A \code{qshap_result} object containing:
