@@ -59,7 +59,7 @@ model_rsq <- 1 - sse / sst
 
 t0 <- proc.time()
 explainer <- qshapr::gazer(model)
-rsq_contributions <- qshapr::qshap_rsq(explainer, X, y)
+rsq_contributions <- qshapr::rsq(explainer, X, y)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 cat("Q-SHAP R^2 sum:", sum(rsq_contributions$rsq), "\n")
@@ -89,7 +89,7 @@ model_rsq <- 1 - sse / sst
 t0 <- proc.time()
 explainer <- qshapr::gazer(model)
 # parallel computation with 10 cores (would be useful if n_samples is large or depth is high)
-rsq_cons <- qshapr::qshap_rsq(explainer, X, y, local=TRUE, ncore = 10)
+rsq_cons <- qshapr::rsq(explainer, X, y, local=TRUE, ncore = 10)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 rsq_contributions <- rsq_cons[[1]]

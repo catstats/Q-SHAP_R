@@ -254,8 +254,11 @@ vis$rsq <- function(
   pal <- .vis_high_dark(.vis_palette(color_map_name, n = 256))
   df$fill <- pal[pmax(1, pmin(256, 1 + floor(df$val_norm * 255)))]
 
-  # label text
-  df$txt <- formatC(df$value, format = "f", digits = decimal)
+  # label text (avoid showing '-0.000' from floating-point noise)
+  val_for_txt <- df$value
+  tol <- 0.5 * 10^(-decimal)
+  val_for_txt[abs(val_for_txt) < tol] <- 0
+  df$txt <- formatC(val_for_txt, format = "f", digits = decimal)
 
   # add numeric labels on bars
   if (isTRUE(show_value)) {

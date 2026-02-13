@@ -455,7 +455,7 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
     random_state = random_state,
     ncore = ncore
   )
-  
+
   # Extract feature names
   if (is.null(feature_names)) {
     feature_names <- colnames(x)
@@ -463,19 +463,24 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
       feature_names <- paste0("Feature_", seq_len(ncol(x)))
     }
   }
-  
+
   # Add names to rsq vector
   names(result$rsq) <- feature_names
-  
-  # Create qshap_result object
-  qshap_result(
-    rsq = result$rsq,
-    feature_names = feature_names,
-    total_rsq = sum(result$rsq, na.rm = TRUE),
-    n_samples = nrow(x),
-    n_features = length(result$rsq),
-    loss = result$loss
-  )
+
+  # Make rsq() return the SAME core object as qshap_rsq(),
+  # just with extra metadata and a more general class.
+  result$feature_names <- feature_names
+  result$total_rsq <- sum(result$rsq, na.rm = TRUE)
+  result$n_samples <- nrow(x)
+  result$n_features <- length(result$rsq)
+
+  # Ensure loss is present only when local=TRUE
+  if (!isTRUE(local) && !is.null(result$loss)) {
+    result$loss <- NULL
+  }
+
+  class(result) <- c("qshap_result", "qshap_rsq", "list")
+  return(result)
 }
 
 #' Alias for qshap_loss
