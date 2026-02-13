@@ -142,7 +142,7 @@ lgb_model <- lgb.train(
 explainer <- gazer(lgb_model)
 
 # Calculate feature-specific R^2 values
-phi_rsq <- qshap_rsq(explainer, X, y)
+phi_rsq <- rsq(explainer, X, y)
 
 # Calculate model R^2 for verification
 ypred <- predict(lgb_model, X)
