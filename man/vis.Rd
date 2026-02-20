@@ -23,4 +23,4 @@ vis
 An environment containing visualization functions for Q-SHAP results.
 Access functions using \code{vis$rsq()}, \code{vis$elbow()}, etc.
 }
-\keyword{datasets}
+\keyword{internal}
