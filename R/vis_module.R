@@ -14,7 +14,7 @@
 #'   \item{loss}{Interactive loss explorer (requires shiny)}
 #' }
 #' 
-#' @export
+#' @keywords internal
 vis <- new.env(parent = emptyenv())
 
 # helper: pick a "matplotlib-like" palette name
@@ -697,7 +697,7 @@ vis$density <- function(
 #' # plot_qshap(rsq_cons[[2]], type = "loss")
 #' }
 #'
-#' @export
+#' @keywords internal
 plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss"), ...) {
   # If x is a qshap_rsq object, reuse the S3 method
   if (inherits(x, "qshap_rsq")) {
