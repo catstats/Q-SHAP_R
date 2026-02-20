@@ -16,8 +16,6 @@ n_samples <- 1000
 n_features <- 1000
 n_informative <- 5
 
-
-
 # Simulate data: only first n_informative features affect y
 X <- matrix(rnorm(n_samples * n_features), nrow = n_samples, ncol = n_features)
 
@@ -98,7 +96,6 @@ cat("Model R^2 is:", model_rsq, "\n\n")
 
 
 # if you would like to use sampling
-
 t0 <- proc.time()
 rsq_contributions_sample <- qshapr::qshap_rsq(explainer, X, y, nsample=512)
 t1 <- proc.time()

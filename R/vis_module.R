@@ -9,6 +9,8 @@
 #'   \item{elbow}{Elbow plot showing top contributing features}
 #'   \item{cumu}{Cumulative explained variance plot}
 #'   \item{gcorr}{Generalized correlation plot (square root of R-squared)}
+#'   \item{hist}{Histogram of feature-specific R-squared contributions}
+#'   \item{density}{Density plot of feature-specific R-squared contributions}
 #'   \item{loss}{Interactive loss explorer (requires shiny)}
 #' }
 #' 
@@ -37,7 +39,7 @@ vis <- new.env(parent = emptyenv())
 #'
 #' @param x A `qshap_rsq` object.
 #' @param y Not used.
-#' @param type Plot type: one of "rsq", "elbow", "cumu", "gcorr", or "loss".
+#' @param type Plot type: one of "rsq", "elbow", "cumu", "gcorr", "hist", "density", or "loss".
 #' @param ... Passed to the underlying visualization function.
 #'
 #' @return A ggplot2 object (invisibly).
@@ -45,7 +47,7 @@ vis <- new.env(parent = emptyenv())
 #' @method plot qshap_rsq
 #' @export
 plot.qshap_rsq <- function(x, y = NULL,
-                          type = c("rsq", "elbow", "cumu", "gcorr", "loss"), ...) {
+                          type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss"), ...) {
   type <- match.arg(type)
 
   # Try common field names first
@@ -82,7 +84,9 @@ plot.qshap_rsq <- function(x, y = NULL,
            rsq = vis$rsq(rsq_values, ...),
            elbow = vis$elbow(rsq_values, ...),
            cumu = vis$cumu(rsq_values, ...),
-           gcorr = vis$gcorr(rsq_values, ...))
+           gcorr = vis$gcorr(rsq_values, ...),
+           hist = vis$hist(rsq_values, ...),
+           density = vis$density(rsq_values, ...))
   )
 }
 
@@ -579,6 +583,93 @@ vis$gcorr <- function(
   )
 }
 
+# Histogram of Shapley R^2 contributions (distribution)
+vis$hist <- function(
+  x,
+  bins = 30,
+  title = "Distribution of Shapley R² Contributions",
+  xtitle = "Shapley R² contribution",
+  ytitle = "Density",
+  trim_nonfinite = TRUE,
+  show_density = TRUE,
+  density_adjust = 1,
+  rotation = 0,
+  main_color = "black",
+  fill_color = "grey80",
+  alpha = 0.85,
+  save_name = NULL
+) {
+  x <- as.numeric(x)
+  if (isTRUE(trim_nonfinite)) x <- x[is.finite(x)]
+  if (length(x) == 0L) stop("No finite values to plot.")
+
+  df <- data.frame(value = x)
+
+  p <- ggplot(df, aes(x = value)) +
+    geom_histogram(
+      aes(y = after_stat(density)),
+      bins = as.integer(bins),
+      color = main_color,
+      fill = fill_color,
+      alpha = alpha
+    ) +
+    { if (isTRUE(show_density)) geom_density(adjust = density_adjust, linewidth = 0.9, color = main_color) else NULL } +
+    labs(title = title, x = xtitle, y = ytitle) +
+    theme_classic(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0),
+      axis.title = element_text(face = "bold"),
+      axis.text.x = element_text(angle = rotation, hjust = 1, vjust = 1),
+      panel.grid.major.y = element_line(color = "grey85"),
+      panel.grid.minor = element_blank()
+    )
+
+  if (!is.null(save_name)) {
+    ggsave(filename = paste0(save_name, ".pdf"), plot = p, width = 7, height = 4.2)
+  }
+
+  print(p)
+  invisible(p)
+}
+
+# Density-only plot of Shapley R^2 contributions
+vis$density <- function(
+  x,
+  title = "Density of Shapley R² Contributions",
+  xtitle = "Shapley R² contribution",
+  ytitle = "Density",
+  trim_nonfinite = TRUE,
+  density_adjust = 1,
+  rotation = 0,
+  main_color = "black",
+  save_name = NULL
+) {
+  x <- as.numeric(x)
+  if (isTRUE(trim_nonfinite)) x <- x[is.finite(x)]
+  if (length(x) == 0L) stop("No finite values to plot.")
+
+  df <- data.frame(value = x)
+
+  p <- ggplot(df, aes(x = value)) +
+    geom_density(adjust = density_adjust, linewidth = 0.9, color = main_color) +
+    labs(title = title, x = xtitle, y = ytitle) +
+    theme_classic(base_size = 12) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0),
+      axis.title = element_text(face = "bold"),
+      axis.text.x = element_text(angle = rotation, hjust = 1, vjust = 1),
+      panel.grid.major.y = element_line(color = "grey85"),
+      panel.grid.minor = element_blank()
+    )
+
+  if (!is.null(save_name)) {
+    ggsave(filename = paste0(save_name, ".pdf"), plot = p, width = 7, height = 4.2)
+  }
+
+  print(p)
+  invisible(p)
+}
+
 
 #' Plot Q-SHAP R-squared contributions
 #'
@@ -607,7 +698,7 @@ vis$gcorr <- function(
 #' }
 #'
 #' @export
-plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "loss"), ...) {
+plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss"), ...) {
   # If x is a qshap_rsq object, reuse the S3 method
   if (inherits(x, "qshap_rsq")) {
     return(plot(x, type = type, ...))
@@ -636,7 +727,9 @@ plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "loss"), ...
       rsq = vis$rsq(rsq_values, ...),
       elbow = vis$elbow(rsq_values, ...),
       cumu = vis$cumu(rsq_values, ...),
-      gcorr = vis$gcorr(rsq_values, ...)
+      gcorr = vis$gcorr(rsq_values, ...),
+      hist = vis$hist(rsq_values, ...),
+      density = vis$density(rsq_values, ...)
     )
   )
 }
