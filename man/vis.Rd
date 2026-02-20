@@ -11,6 +11,8 @@ An environment with visualization functions:
   \item{elbow}{Elbow plot showing top contributing features}
   \item{cumu}{Cumulative explained variance plot}
   \item{gcorr}{Generalized correlation plot (square root of R-squared)}
+  \item{hist}{Histogram of feature-specific R-squared contributions}
+  \item{density}{Density plot of feature-specific R-squared contributions}
   \item{loss}{Interactive loss explorer (requires shiny)}
 }
 }

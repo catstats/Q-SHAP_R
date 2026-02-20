@@ -4,7 +4,11 @@
 \alias{plot_qshap}
 \title{Plot Q-SHAP R-squared contributions}
 \usage{
-plot_qshap(x, type = c("rsq", "elbow", "cumu", "gcorr", "loss"), ...)
+plot_qshap(
+  x,
+  type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss"),
+  ...
+)
 }
 \arguments{
 \item{x}{A `qshap_rsq` object (recommended) or a numeric vector.}

@@ -4,14 +4,19 @@
 \alias{plot.qshap_rsq}
 \title{Plot method for qshap_rsq objects}
 \usage{
-\method{plot}{qshap_rsq}(x, y = NULL, type = c("rsq", "elbow", "cumu", "gcorr", "loss"), ...)
+\method{plot}{qshap_rsq}(
+  x,
+  y = NULL,
+  type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss"),
+  ...
+)
 }
 \arguments{
 \item{x}{A `qshap_rsq` object.}
 
 \item{y}{Not used.}
 
-\item{type}{Plot type: one of "rsq", "elbow", "cumu", "gcorr", or "loss".}
+\item{type}{Plot type: one of "rsq", "elbow", "cumu", "gcorr", "hist", "density", or "loss".}
 
 \item{...}{Passed to the underlying visualization function.}
 }
