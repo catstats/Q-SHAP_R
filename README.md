@@ -32,29 +32,17 @@ library(xgboost)
 library(qshapr)
 library(ggplot2)
 
-# Load the California Housing dataset
-url <- "https://raw.githubusercontent.com/ageron/handson-ml2/master/datasets/housing/housing.csv"
-housing <- read.csv(url)
+# Load the Boston Housing dataset
+data(Boston, package = "MASS")
 
-# Create features
-X <- data.frame(
-  MedInc = housing$median_income,
-  HouseAge = housing$housing_median_age,
-  AveRooms = housing$total_rooms / housing$households,
-  AveBedrms = housing$total_bedrooms / housing$households,
-  Population = housing$population,
-  AveOccup = housing$population / housing$households,
-  Latitude = housing$latitude,
-  Longitude = housing$longitude
-)
-
-y <- housing$median_house_value
+X <- Boston[, -14]  # All columns except medv (target)
+y <- Boston$medv
 
 
 # Train XGBoost model
 model <- xgboost(
   x = as.matrix(X),
-  y =  y,
+  y = y,
   nrounds = 50,
   max_depth = 2,
   learning_rate = 0.1,
@@ -282,13 +270,13 @@ result <- rsq(explainer, X, y)
 print(result)
 #> <qshap_result>
 #>   Total R²: 0.8523
-#>   Number of features: 8
-#>   Number of samples: 1000
+#>   Number of features: 13
+#>   Number of samples: 506
 #>
 #> Top 10 features by R²:
 #>   Feature     R_squared
-#>   MedInc       0.4234
-#>   Latitude     0.1892
+#>   lstat        0.4012
+#>   rm           0.2134
 #>   ...
 
 # Get detailed statistics with custom number of top features
