@@ -135,7 +135,7 @@ gazer.default <- function(model, ...) {
 #' 
 #' @return A matrix of loss contributions with dimensions (n_samples, n_features)
 #' 
-#' @export
+#' @keywords internal
 qshap_loss <- function(explainer, x, y, y_mean_ori = NULL) {
   UseMethod("qshap_loss")
 }
