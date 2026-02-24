@@ -252,7 +252,7 @@ print(explainer)
 #>   Model type: xgboost
 #>   Number of trees: 50
 #>   Max depth: 2
-#>   Base score: 0.5
+#>   Base score: 22.5328 
 
 # Detailed summary
 summary(explainer)
@@ -269,15 +269,15 @@ result <- rsq(explainer, X, y)
 # Print top contributing features (default: top 10)
 print(result)
 #> <qshap_result>
-#>   Total R²: 0.8523
-#>   Number of features: 13
-#>   Number of samples: 506
-#>
+#>  Total R²: 0.9082 
+#>  Number of features: 13 
+#>  Number of samples: 506 
+
 #> Top 10 features by R²:
-#>   Feature     R_squared
-#>   lstat        0.4012
-#>   rm           0.2134
-#>   ...
+#> Feature R_squared
+#>   lstat 0.4606137
+#>      rm 0.3148459
+#>     ...
 
 # Get detailed statistics with custom number of top features
 summary(result, n = 5)  # Show top 5 features
