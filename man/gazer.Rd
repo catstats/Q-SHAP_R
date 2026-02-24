@@ -2,7 +2,7 @@
 % Please edit documentation in R/tree_explainer.R
 \name{gazer}
 \alias{gazer}
-\title{Create a QSHAPR Tree Explainer}
+\title{Create a QSHAP Tree Explainer}
 \usage{
 gazer(model, max_depth = NULL, base_score = NULL, ...)
 }
@@ -16,7 +16,7 @@ gazer(model, max_depth = NULL, base_score = NULL, ...)
 \item{...}{Additional arguments, for future use}
 }
 \value{
-A \class{qshapr_tree_explainer} object containing the model information and
+A \class{qshap_tree_explainer} object containing the model information and
   preprocessed tree structures for fast Shapley value computation
 }
 \description{

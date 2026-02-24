@@ -1,9 +1,9 @@
-#' S3 Class Constructors and Methods for qshapr
+#' S3 Class Constructors and Methods for qshap
 #'
 #' This file contains formal S3 class definitions, constructors, validators,
-#' and methods for the qshapr package objects.
+#' and methods for the qshap package objects.
 #'
-#' @name qshapr-classes
+#' @name qshap-classes
 #' @keywords internal
 NULL
 
@@ -243,12 +243,12 @@ print.tree_summary <- function(x, ...) {
 }
 
 # ============================================================================
-# qshapr_tree_explainer class
+# qshap_tree_explainer class
 # ============================================================================
 
-#' Constructor for qshapr_tree_explainer class
+#' Constructor for qshap_tree_explainer class
 #' 
-#' Creates a qshapr_tree_explainer object
+#' Creates a qshap_tree_explainer object
 #' 
 #' @param model The original tree model object
 #' @param model_type Character string indicating model type ("xgboost" or "lightgbm")
@@ -258,9 +258,9 @@ print.tree_summary <- function(x, ...) {
 #' @param store_v_invc Precomputed complex values for SHAP computation
 #' @param store_z Precomputed root values for SHAP computation
 #' 
-#' @return An object of class \code{qshapr_tree_explainer}
+#' @return An object of class \code{qshap_tree_explainer}
 #' @keywords internal
-new_qshapr_tree_explainer <- function(model,
+new_qshap_tree_explainer <- function(model,
                                       model_type,
                                       max_depth,
                                       base_score = NULL,
@@ -283,24 +283,24 @@ new_qshapr_tree_explainer <- function(model,
   
   # Set appropriate classes
   if (model_type == "xgboost") {
-    class(obj) <- c("qshapr_tree_explainer", "xgboost_explainer")
+    class(obj) <- c("qshap_tree_explainer", "xgboost_explainer")
   } else if (model_type == "lightgbm") {
-    class(obj) <- c("qshapr_tree_explainer", "lightgbm_explainer")
+    class(obj) <- c("qshap_tree_explainer", "lightgbm_explainer")
   } else {
-    class(obj) <- "qshapr_tree_explainer"
+    class(obj) <- "qshap_tree_explainer"
   }
   
   obj
 }
 
-#' Validator for qshapr_tree_explainer
+#' Validator for qshap_tree_explainer
 #' 
-#' @param x A qshapr_tree_explainer object
+#' @param x A qshap_tree_explainer object
 #' @return The validated object (invisibly) or stops with an error
 #' @keywords internal
-validate_qshapr_tree_explainer <- function(x) {
-  if (!inherits(x, "qshapr_tree_explainer")) {
-    stop("Object must be of class 'qshapr_tree_explainer'", call. = FALSE)
+validate_qshap_tree_explainer <- function(x) {
+  if (!inherits(x, "qshap_tree_explainer")) {
+    stop("Object must be of class 'qshap_tree_explainer'", call. = FALSE)
   }
   
   # Check required fields
@@ -333,13 +333,13 @@ validate_qshapr_tree_explainer <- function(x) {
   invisible(x)
 }
 
-#' Print method for qshapr_tree_explainer
+#' Print method for qshap_tree_explainer
 #' 
-#' @param x A qshapr_tree_explainer object
+#' @param x A qshap_tree_explainer object
 #' @param ... Additional arguments (currently unused)
 #' @export
-print.qshapr_tree_explainer <- function(x, ...) {
-  cat("<qshapr_tree_explainer>\n")
+print.qshap_tree_explainer <- function(x, ...) {
+  cat("<qshap_tree_explainer>\n")
   cat("  Model type:", x$model_type, "\n")
   cat("  Number of trees:", length(x$trees), "\n")
   cat("  Max depth:", x$max_depth, "\n")
@@ -349,14 +349,14 @@ print.qshapr_tree_explainer <- function(x, ...) {
   invisible(x)
 }
 
-#' Summary method for qshapr_tree_explainer
+#' Summary method for qshap_tree_explainer
 #' 
 #' Provides detailed summary information about the explainer
 #' 
-#' @param object A qshapr_tree_explainer object
+#' @param object A qshap_tree_explainer object
 #' @param ... Additional arguments (currently unused)
 #' @export
-summary.qshapr_tree_explainer <- function(object, ...) {
+summary.qshap_tree_explainer <- function(object, ...) {
   cat("Q-SHAP Tree Explainer Summary\n")
   cat("=============================\n\n")
   

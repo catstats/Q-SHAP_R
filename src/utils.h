@@ -1,5 +1,5 @@
-#ifndef QSHAPR_UTILS_H
-#define QSHAPR_UTILS_H
+#ifndef QSHAP_UTILS_H
+#define QSHAP_UTILS_H
 
 #include <RcppEigen.h>
 #include <Rcpp.h>

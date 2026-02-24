@@ -20,7 +20,7 @@ rsq(
 )
 }
 \arguments{
-\item{explainer}{A qshapr_tree_explainer object created by \code{gazer()}}
+\item{explainer}{A qshap_tree_explainer object created by \code{gazer()}}
 
 \item{x}{Feature matrix or data frame with n samples and p features}
 

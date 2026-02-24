@@ -32,7 +32,7 @@
 #' \dontrun{
 #' # Example with XGBoost
 #' library(xgboost)
-#' library(qshapr)
+#' library(qshap)
 #'
 #' # Generate sample data
 #' set.seed(42)
@@ -53,6 +53,6 @@
 #' }
 #'
 #' @docType package
-#' @name qshapr
+#' @name qshap
 #' @keywords internal
 "_PACKAGE"

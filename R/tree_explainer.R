@@ -2,10 +2,10 @@
 #' @importFrom methods new
 #' @importFrom parallel makeCluster stopCluster detectCores
 #' @importFrom parallel clusterEvalQ clusterExport parLapply
-#' @useDynLib qshapr, .registration = TRUE
+#' @useDynLib qshap, .registration = TRUE
 NULL
 
-#' Create a QSHAPR Tree Explainer
+#' Create a QSHAP Tree Explainer
 #' 
 #' Creates an explainer object for computing feature-specific Shapley values
 #' from a trained tree ensemble model. Supports XGBoost and LightGBM models.
@@ -15,7 +15,7 @@ NULL
 #' @param base_score Base score for predictions, extracted from \code{model} by default.
 #' @param ... Additional arguments, for future use
 #' 
-#' @return A \class{qshapr_tree_explainer} object containing the model information and
+#' @return A \class{qshap_tree_explainer} object containing the model information and
 #'   preprocessed tree structures for fast Shapley value computation
 #'   
 #' @examples
@@ -78,7 +78,7 @@ gazer.xgb.Booster <- function(model, ...) {
 
   xgb_trees <- xgb_formatter(model_json, max_depth)
 
-  explainer <- new_qshapr_tree_explainer(
+  explainer <- new_qshap_tree_explainer(
     model = model,
     model_type = "xgboost",
     max_depth = max_depth,
@@ -88,7 +88,7 @@ gazer.xgb.Booster <- function(model, ...) {
     store_z = store_complex_root(max_depth * 2)
   )
   
-  validate_qshapr_tree_explainer(explainer)
+  validate_qshap_tree_explainer(explainer)
   explainer
 }
 
@@ -100,7 +100,7 @@ gazer.lgb.Booster <- function(model, max_depth = NULL, ...) {
   # Format LightGBM trees
   lgb_trees <- lgb_formatter(model, max_depth)
 
-  explainer <- new_qshapr_tree_explainer(
+  explainer <- new_qshap_tree_explainer(
     model = model,
     model_type = "lightgbm",
     max_depth = max_depth,
@@ -110,7 +110,7 @@ gazer.lgb.Booster <- function(model, max_depth = NULL, ...) {
     store_z = store_complex_root(max_depth * 2)
   )
   
-  validate_qshapr_tree_explainer(explainer)
+  validate_qshap_tree_explainer(explainer)
   explainer
 }
 
@@ -128,7 +128,7 @@ gazer.default <- function(model, ...) {
 #' Computes the feature-specific loss contributions using Q-SHAP decomposition.
 #' This is an internal function typically called by \code{rsq()}.
 #' 
-#' @param explainer A qshapr_tree_explainer object created by \code{gazer()}
+#' @param explainer A qshap_tree_explainer object created by \code{gazer()}
 #' @param x Feature matrix or data frame
 #' @param y Response vector
 #' @param y_mean_ori Optional pre-computed mean of y (for efficiency)
@@ -141,7 +141,7 @@ qshap_loss <- function(explainer, x, y, y_mean_ori = NULL) {
 }
 
 #' @export
-qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) {
+qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) {
   switch(explainer$model_type,
     "xgboost" = qshap_loss_xgboost(explainer, x, y, y_mean_ori),
     "lightgbm" = qshap_loss_lightgbm(explainer, x, y, y_mean_ori),
@@ -155,7 +155,7 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' Computes feature-specific R-squared values using Q-SHAP decomposition.
  #' Supports parallel processing and sampling for large datasets.
  #' 
- #' @param explainer A qshapr_tree_explainer object created by \code{gazer()}
+ #' @param explainer A qshap_tree_explainer object created by \code{gazer()}
  #' @param x Feature matrix or data frame with n samples and p features
  #' @param y Response vector of length n
  #' @param local Logical; if TRUE, returns both R-squared values and loss matrix
@@ -296,7 +296,7 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
   on.exit(parallel::stopCluster(cl), add = TRUE)
 
   # Ensure package namespace is available on workers
-  parallel::clusterEvalQ(cl, suppressPackageStartupMessages(library(qshapr)))
+  parallel::clusterEvalQ(cl, suppressPackageStartupMessages(library(qshap)))
 
   # Export needed data once (avoid resending for every task)
   parallel::clusterExport(
@@ -306,7 +306,7 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
   )
 
   worker <- function(idx) {
-  lc <- qshapr::qshap_loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
+  lc <- qshap::qshap_loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
 
   if (local) {
     # keep full chunk loss matrix

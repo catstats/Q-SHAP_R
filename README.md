@@ -1,4 +1,4 @@
-# qshapr: Feature-Specific $R^2$ Values for Boosting Trees in R
+# qshap: Feature-Specific $R^2$ Values for Boosting Trees in R
 
 This R package computes feature-specific $R^2$ values using Shapley decomposition of the total $R^2$ for Boosting Trees in polynomial time based on the [paper](https://arxiv.org/abs/2407.03515).
 
@@ -14,13 +14,13 @@ Currently supports **XGBoost** and **LightGBM** models.
 
 ## Installation
 
-You can install `qshapr` from GitHub:
+You can install `qshap` from GitHub:
 
 ```r
 # Install devtools if you haven't already
 install.packages("devtools")
 
-# Install qshapr from GitHub
+# Install qshap from GitHub
 devtools::install_github("catstats/Q-SHAP_R")
 ```
 
@@ -29,7 +29,7 @@ devtools::install_github("catstats/Q-SHAP_R")
 ```r
 # Load required libraries
 library(xgboost)
-library(qshapr)
+library(qshap)
 library(ggplot2)
 
 # Load the Boston Housing dataset
@@ -92,7 +92,7 @@ plot(
 ```r
 # Load required libraries
 library(lightgbm)
-library(qshapr)
+library(qshap)
 
 # Generate synthetic data with high dimension
 set.seed(42)
@@ -214,7 +214,7 @@ plot(result, type = "gcorr", label = feature_names, rotation=45)
 ### Main Functions
 
 - `gazer(model)`: Create a Q-SHAP explainer from a trained model
-  - Returns a `qshapr_tree_explainer` object with `print()` and `summary()` methods
+  - Returns a `qshap_tree_explainer` object with `print()` and `summary()` methods
 - `rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
   - Returns a `qshap_result` object with enhanced formatting and methods
   - Automatically extracts feature names and includes metadata
@@ -228,7 +228,7 @@ plot(result, type = "gcorr", label = feature_names, rotation=45)
 
 The package uses a formal S3 class system for better structure and usability:
 
-#### `qshapr_tree_explainer`
+#### `qshap_tree_explainer`
 
 Created by `gazer()`. Contains the preprocessed model information for fast SHAP computation.
 
@@ -237,7 +237,7 @@ explainer <- gazer(model)
 
 # Print summary information
 print(explainer)
-#> <qshapr_tree_explainer>
+#> <qshap_tree_explainer>
 #>   Model type: xgboost
 #>   Number of trees: 50
 #>   Max depth: 2
