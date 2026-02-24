@@ -199,15 +199,6 @@ plot(result, type = "cumu", label = feature_names, max_comp = 10)
 plot(result, type = "gcorr", label = feature_names, rotation=45)
 ```
 
-**Note:** The legacy `vis$*` interface is still supported for backward compatibility:
-
-```r
-vis$rsq(result, label = feature_names)
-vis$elbow(result, label = feature_names, max_comp = 10)
-vis$cumu(result, label = feature_names, max_comp = 10)
-vis$gcorr(result, label = feature_names)
-```
-
 ## Citation
 
 ```bibtex
