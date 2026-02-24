@@ -133,6 +133,8 @@ top_idx <- plot(rsq_cons, type = "elbow", max_comp = 15, label=feature_names)
 # cumulative explained
 plot(rsq_cons, type = "cumu", max_comp = 15, save_name = "cumu_eg")
 
+plot(rsq_cons,type="hist")
+
 # interactive loss explorer
 # (this launches a small shiny app)
 # Note: vis$loss still uses the old interface
