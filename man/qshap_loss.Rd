@@ -7,7 +7,7 @@
 qshap_loss(explainer, x, y, y_mean_ori = NULL)
 }
 \arguments{
-\item{explainer}{A qshapr_tree_explainer object created by \code{gazer()}}
+\item{explainer}{A qshap_tree_explainer object created by \code{gazer()}}
 
 \item{x}{Feature matrix or data frame}
 

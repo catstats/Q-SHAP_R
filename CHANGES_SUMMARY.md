@@ -2,15 +2,15 @@
 
 ## Overview
 
-This PR adds a formal S3 class system to the qshapr package, making it more professional, maintainable, and user-friendly.
+This PR adds a formal S3 class system to the qshap package, making it more professional, maintainable, and user-friendly.
 
 ## What Changed
 
 ### 1. New File: `R/classes.R`
 
 Added formal S3 class definitions with:
-- Constructors (e.g., `new_qshapr_tree_explainer()`)
-- Validators (e.g., `validate_qshapr_tree_explainer()`)
+- Constructors (e.g., `new_qshap_tree_explainer()`)
+- Validators (e.g., `validate_qshap_tree_explainer()`)
 - User-facing constructors (e.g., `simple_tree()`, `tree_summary()`)
 - Rich S3 methods:
   - `print()` methods for all classes
@@ -28,7 +28,7 @@ A new class to wrap Q-SHAP results with:
 ### 3. Updated Files
 
 **`R/tree_explainer.R`**:
-- Now uses `new_qshapr_tree_explainer()` constructor
+- Now uses `new_qshap_tree_explainer()` constructor
 - Validates explainer objects before returning
 - Maintains backward compatibility
 
@@ -99,7 +99,7 @@ $max_depth
 After:
 ```r
 > explainer
-<qshapr_tree_explainer>
+<qshap_tree_explainer>
   Model type: xgboost
   Number of trees: 50
   Max depth: 6
@@ -243,7 +243,7 @@ All tests pass successfully:
 
 ```
 ========================================
-Testing qshapr Class Structure
+Testing qshap Class Structure
 ========================================
 
 Test 1: simple_tree class
@@ -286,4 +286,4 @@ Recommended future enhancements:
 
 ## Conclusion
 
-This PR modernizes the qshapr package with a professional S3 class system while maintaining 100% backward compatibility. Users get better error messages, richer output, and more convenient data manipulation, all while existing code continues to work unchanged.
+This PR modernizes the qshap package with a professional S3 class system while maintaining 100% backward compatibility. Users get better error messages, richer output, and more convenient data manipulation, all while existing code continues to work unchanged.

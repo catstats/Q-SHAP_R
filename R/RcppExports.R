@@ -2,18 +2,18 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 T2 <- function(x, tree_summary, store_v_invc, store_z, parallel = TRUE) {
-    .Call(`_qshapr_T2`, x, tree_summary, store_v_invc, store_z, parallel)
+    .Call(`_qshap_T2`, x, tree_summary, store_v_invc, store_z, parallel)
 }
 
 loss_treeshap <- function(x, y, tree_summary, store_v_invc, store_z, T0_x, learning_rate = 1.0) {
-    .Call(`_qshapr_loss_treeshap`, x, y, tree_summary, store_v_invc, store_z, T0_x, learning_rate)
+    .Call(`_qshap_loss_treeshap`, x, y, tree_summary, store_v_invc, store_z, T0_x, learning_rate)
 }
 
 store_complex_v_invc <- function(d) {
-    .Call(`_qshapr_store_complex_v_invc`, d)
+    .Call(`_qshap_store_complex_v_invc`, d)
 }
 
 store_complex_root <- function(d) {
-    .Call(`_qshapr_store_complex_root`, d)
+    .Call(`_qshap_store_complex_root`, d)
 }
 

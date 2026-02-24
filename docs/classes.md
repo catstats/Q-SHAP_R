@@ -1,12 +1,12 @@
-# qshapr S3 Class System
+# qshap S3 Class System
 
 ## Overview
 
-The `qshapr` package uses a formal S3 class system to provide a professional and user-friendly interface.
+The `qshap` package uses a formal S3 class system to provide a professional and user-friendly interface.
 
 ## Core Classes
 
-1. **`qshapr_tree_explainer`** - Main explainer object for computing SHAP values
+1. **`qshap_tree_explainer`** - Main explainer object for computing SHAP values
 2. **`qshap_result`** - Container for Q-SHAP R² results with rich metadata
 3. **`simple_tree`** - Internal representation of a single tree structure
 4. **`tree_summary`** - Summarized tree structure with computed statistics
@@ -17,7 +17,7 @@ The `qshapr` package uses a formal S3 class system to provide a professional and
 
 ```r
 library(xgboost)
-library(qshapr)
+library(qshap)
 
 # Train model
 model <- xgboost(data = X, label = y, nrounds = 50, verbose = 0)
@@ -27,7 +27,7 @@ explainer <- gazer(model)
 
 # Quick summary
 print(explainer)
-#> <qshapr_tree_explainer>
+#> <qshap_tree_explainer>
 #>   Model type: xgboost
 #>   Number of trees: 50
 #>   Max depth: 6

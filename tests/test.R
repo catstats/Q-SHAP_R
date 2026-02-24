@@ -3,7 +3,7 @@ suppressPackageStartupMessages({
   library(data.table)
   library(lightgbm)
   library(xgboost)
-  library(qshapr)
+  library(qshap)
   library(ggplot2)
   library(ggrepel)
 })
@@ -56,8 +56,8 @@ sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse / sst
 
 t0 <- proc.time()
-explainer <- qshapr::gazer(model)
-rsq_contributions <- qshapr::rsq(explainer, X, y)
+explainer <- qshap::gazer(model)
+rsq_contributions <- qshap::rsq(explainer, X, y)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 cat("Q-SHAP R^2 sum:", sum(rsq_contributions$rsq), "\n")
@@ -85,9 +85,9 @@ sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse / sst
 
 t0 <- proc.time()
-explainer <- qshapr::gazer(model)
+explainer <- qshap::gazer(model)
 # parallel computation with 10 cores (would be useful if n_samples is large or depth is high)
-rsq_cons <- qshapr::rsq(explainer, X, y, local=TRUE, ncore = 10)
+rsq_cons <- qshap::rsq(explainer, X, y, local=TRUE, ncore = 10)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 rsq_contributions <- rsq_cons[[1]]
@@ -97,7 +97,7 @@ cat("Model R^2 is:", model_rsq, "\n\n")
 
 # if you would like to use sampling
 t0 <- proc.time()
-rsq_contributions_sample <- qshapr::qshap_rsq(explainer, X, y, nsample=512)
+rsq_contributions_sample <- qshap::qshap_rsq(explainer, X, y, nsample=512)
 t1 <- proc.time()
 cat("time:", t1 - t0, "\n")
 
@@ -146,7 +146,7 @@ plot(rsq_cons,type="hist")
 cat("\n=== Testing new rsq() wrapper ===\n")
 
 # Test rsq() wrapper with default arguments
-result <- qshapr::rsq(explainer, X, y)
+result <- qshap::rsq(explainer, X, y)
 cat("\nTesting print method for qshap_result:\n")
 print(result)
 
@@ -160,17 +160,17 @@ print(head(df, 5))
 
 # Test rsq() with custom feature names
 custom_names <- paste0("Feature_", 1:ncol(X))
-result_custom <- qshapr::rsq(explainer, X, y, feature_names = custom_names)
+result_custom <- qshap::rsq(explainer, X, y, feature_names = custom_names)
 cat("\nWith custom feature names:\n")
 print(result_custom)
 
 # Test summary method for qshap_rsq objects
 cat("\n=== Testing summary() for qshap_rsq objects ===\n")
-rsq_obj <- qshapr::qshap_rsq(explainer, X, y)
+rsq_obj <- qshap::qshap_rsq(explainer, X, y)
 summary(rsq_obj, n = 10)
 
 # Test with confidence intervals
-rsq_with_ci <- qshapr::qshap_rsq(explainer, X, y, ci_out = TRUE)
+rsq_with_ci <- qshap::qshap_rsq(explainer, X, y, ci_out = TRUE)
 cat("\nSummary with confidence intervals:\n")
 summary(rsq_with_ci, n = 5)
 
@@ -183,14 +183,14 @@ cat("\n=== All tests completed successfully ===\n")
 cat("\n=== Testing new loss() alias ===\n")
 
 # Test loss() alias - should work the same as qshap_loss()
-loss_matrix_alias <- qshapr::loss(explainer, X, y)
+loss_matrix_alias <- qshap::loss(explainer, X, y)
 cat("\nLoss matrix dimensions using loss():\n")
 cat(paste("Dimensions:", paste(dim(loss_matrix_alias), collapse = " x "), "\n"))
 
 # Compare with qshap_loss()
-loss_matrix_original <- qshapr::qshap_loss(explainer, X, y)
+loss_matrix_original <- qshap::qshap_loss(explainer, X, y)
 cat("Are results identical?", identical(loss_matrix_alias, loss_matrix_original), "\n")
 
 cat("\n=== loss() alias test completed successfully ===\n")
 
-qshapr::vis$loss(rsq_cons[[2]])
+qshap::vis$loss(rsq_cons[[2]])

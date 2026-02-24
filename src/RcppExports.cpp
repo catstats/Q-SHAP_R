@@ -13,7 +13,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // T2
 Eigen::MatrixXd T2(const Eigen::MatrixXd& x, const Rcpp::List& tree_summary, const Eigen::MatrixXcd& store_v_invc, const Eigen::MatrixXcd& store_z, bool parallel);
-RcppExport SEXP _qshapr_T2(SEXP xSEXP, SEXP tree_summarySEXP, SEXP store_v_invcSEXP, SEXP store_zSEXP, SEXP parallelSEXP) {
+RcppExport SEXP _qshap_T2(SEXP xSEXP, SEXP tree_summarySEXP, SEXP store_v_invcSEXP, SEXP store_zSEXP, SEXP parallelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -28,7 +28,7 @@ END_RCPP
 }
 // loss_treeshap
 Eigen::MatrixXd loss_treeshap(const Eigen::MatrixXd& x, const Eigen::VectorXd& y, const Rcpp::List& tree_summary, const Eigen::MatrixXcd& store_v_invc, const Eigen::MatrixXcd& store_z, const Eigen::MatrixXd& T0_x, double learning_rate);
-RcppExport SEXP _qshapr_loss_treeshap(SEXP xSEXP, SEXP ySEXP, SEXP tree_summarySEXP, SEXP store_v_invcSEXP, SEXP store_zSEXP, SEXP T0_xSEXP, SEXP learning_rateSEXP) {
+RcppExport SEXP _qshap_loss_treeshap(SEXP xSEXP, SEXP ySEXP, SEXP tree_summarySEXP, SEXP store_v_invcSEXP, SEXP store_zSEXP, SEXP T0_xSEXP, SEXP learning_rateSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -45,7 +45,7 @@ END_RCPP
 }
 // store_complex_v_invc
 Eigen::MatrixXcd store_complex_v_invc(int d);
-RcppExport SEXP _qshapr_store_complex_v_invc(SEXP dSEXP) {
+RcppExport SEXP _qshap_store_complex_v_invc(SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -56,7 +56,7 @@ END_RCPP
 }
 // store_complex_root
 Eigen::MatrixXcd store_complex_root(int d);
-RcppExport SEXP _qshapr_store_complex_root(SEXP dSEXP) {
+RcppExport SEXP _qshap_store_complex_root(SEXP dSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -67,14 +67,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_qshapr_T2", (DL_FUNC) &_qshapr_T2, 5},
-    {"_qshapr_loss_treeshap", (DL_FUNC) &_qshapr_loss_treeshap, 7},
-    {"_qshapr_store_complex_v_invc", (DL_FUNC) &_qshapr_store_complex_v_invc, 1},
-    {"_qshapr_store_complex_root", (DL_FUNC) &_qshapr_store_complex_root, 1},
+    {"_qshap_T2", (DL_FUNC) &_qshap_T2, 5},
+    {"_qshap_loss_treeshap", (DL_FUNC) &_qshap_loss_treeshap, 7},
+    {"_qshap_store_complex_v_invc", (DL_FUNC) &_qshap_store_complex_v_invc, 1},
+    {"_qshap_store_complex_root", (DL_FUNC) &_qshap_store_complex_root, 1},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_qshapr(DllInfo *dll) {
+RcppExport void R_init_qshap(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }
