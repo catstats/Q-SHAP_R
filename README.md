@@ -294,14 +294,8 @@ The recommended way to visualize Q-SHAP results is using the standard R `plot()`
 - `plot(x, type = "elbow", ...)`: Elbow plot of top features
 - `plot(x, type = "cumu", ...)`: Cumulative explained variance plot
 - `plot(x, type = "gcorr", ...)`: Generalized correlation plot
+- `plot(x, type = "hist", ...)`: Histogram of R² values
 
-For backward compatibility, the legacy `vis$*` interface is also available:
-
-- `vis$rsq()`: Bar plot of R² values
-- `vis$elbow()`: Elbow plot of top features
-- `vis$cumu()`: Cumulative explained variance plot
-- `vis$gcorr()`: Generalized correlation plot
-- `vis$loss()`: Interactive loss explorer (requires shiny)
 
 ## References
 
