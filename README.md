@@ -54,7 +54,7 @@ explainer <- gazer(model)
 
 # Calculate feature-specific R^2 values using the rsq() wrapper
 # This returns a qshap_result object with enhanced formatting
-result <- rsq(explainer, X, y, nsample=1024)
+result <- rsq(explainer, X, y)
 
 # Print shows top 10 features automatically
 print(result)
