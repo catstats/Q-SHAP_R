@@ -16,7 +16,7 @@ values for tree ensemble models. Main functions include:
 
 \itemize{
   \item \code{gazer()}: Create a Q-SHAP explainer from a trained model
-  \item \code{qshap_rsq()}: Calculate feature-specific R-squared values
+  \item \code{rsq()}: Calculate feature-specific R-squared values
   \item \code{qshap_loss()}: Calculate feature-specific loss contributions
   \item \code{vis$rsq()}: Visualize R-squared values
   \item \code{vis$elbow()}: Create elbow plot of top features
@@ -56,7 +56,7 @@ model <- xgboost(data = X, label = y, nrounds = 50, max_depth = 3, verbose = 0)
 
 # Create explainer and calculate R-squared values
 explainer <- gazer(model)
-phi_rsq <- qshap_rsq(explainer, X, y)
+phi_rsq <- rsq(explainer, X, y)
 
 # Visualize
 vis$rsq(phi_rsq, label = colnames(X))

@@ -2,7 +2,7 @@
 % Please edit documentation in R/tree_explainer.R
 \name{rsq}
 \alias{rsq}
-\title{Wrapper function for qshap_rsq returning a qshap_result object}
+\title{Calculate Feature-Specific R-Squared Values}
 \usage{
 rsq(
   explainer,
@@ -57,14 +57,14 @@ A \code{qshap_result} object containing:
   }
 }
 \description{
-This is a convenience wrapper around \code{qshap_rsq} that returns a 
-\code{qshap_result} object with better formatting and additional metadata.
+Computes feature-specific R-squared values using Q-SHAP decomposition,
+returning a \code{qshap_result} object with better formatting and additional metadata.
 The \code{qshap_result} object includes feature names, total R², sample counts,
 and provides enhanced \code{print()}, \code{summary()}, and \code{as.data.frame()}
 methods for easier analysis.
 }
 \details{
-This wrapper provides a more user-friendly interface than \code{qshap_rsq}:
+This function provides a user-friendly interface for Q-SHAP R² computation:
 \itemize{
   \item Automatically extracts feature names from the input data
   \item Returns a structured object with metadata
@@ -94,5 +94,5 @@ result <- rsq(explainer, X, y, ncore = 4)
 
 }
 \seealso{
-\code{\link{qshap_rsq}}, \code{\link{qshap_result}}
+\code{\link{qshap_result}}
 }

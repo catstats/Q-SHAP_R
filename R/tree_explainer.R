@@ -126,7 +126,7 @@ gazer.default <- function(tree_model, ...) {
 #' Calculate Q-SHAP Loss Contributions
 #' 
 #' Computes the feature-specific loss contributions using Q-SHAP decomposition.
-#' This is an internal function typically called by \code{qshap_rsq()}.
+#' This is an internal function typically called by \code{rsq()}.
 #' 
 #' @param explainer A qshapr_tree_explainer object created by \code{gazer()}
 #' @param x Feature matrix or data frame
@@ -202,7 +202,7 @@ qshap_loss.qshapr_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL)
  #' phi_rsq_sampled <- qshap_rsq(explainer, X, y, nsample = 100, random_state = 42)
  #' }
  #' 
- #' @export 
+ #' @keywords internal
 qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = TRUE,
                       ci_out = TRUE, level = 0.95,
                       nfrac = NULL, random_state = 42,
@@ -386,10 +386,10 @@ if (local) {
 
 }
 
-#' Wrapper function for qshap_rsq returning a qshap_result object
+#' Calculate Feature-Specific R-Squared Values
 #'
-#' This is a convenience wrapper around \code{qshap_rsq} that returns a 
-#' \code{qshap_result} object with better formatting and additional metadata.
+#' Computes feature-specific R-squared values using Q-SHAP decomposition,
+#' returning a \code{qshap_result} object with better formatting and additional metadata.
 #' The \code{qshap_result} object includes feature names, total R², sample counts,
 #' and provides enhanced \code{print()}, \code{summary()}, and \code{as.data.frame()}
 #' methods for easier analysis.
@@ -407,7 +407,7 @@ if (local) {
 #'   }
 #'
 #' @details
-#' This wrapper provides a more user-friendly interface than \code{qshap_rsq}:
+#' This function provides a user-friendly interface for Q-SHAP R² computation:
 #' \itemize{
 #'   \item Automatically extracts feature names from the input data
 #'   \item Returns a structured object with metadata
@@ -435,7 +435,7 @@ if (local) {
 #' result <- rsq(explainer, X, y, ncore = 4)
 #' }
 #'
-#' @seealso \code{\link{qshap_rsq}}, \code{\link{qshap_result}}
+#' @seealso \code{\link{qshap_result}}
 #' @export
 rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = NULL, 
                 sd_out = TRUE, ci_out = TRUE, level = 0.95, nfrac = NULL, 

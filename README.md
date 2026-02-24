@@ -77,10 +77,7 @@ summary(result, n = 5)
 # Convert to data frame for further analysis
 df <- as.data.frame(result)
 
-# Alternatively, use qshap_rsq() for the raw numeric vector
-phi_rsq <- qshap_rsq(explainer, X, y, nsample=1024)
-
-# Or calculate loss contributions directly using loss() alias
+# Calculate loss contributions directly using loss() alias
 loss_matrix <- loss(explainer, X, y)
 
 # Calculate model R^2 for verification
@@ -89,12 +86,12 @@ sst <- sum((y - mean(y))^2)
 sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse/sst
 
-print(paste("Total R^2:", round(sum(phi_rsq$rsq), 4)))
+print(paste("Total R^2:", round(sum(result$rsq), 4)))
 print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize feature-specific R^2
 plot(
-  phi_rsq,
+  result,
   label = colnames(X),
   rotation = 45,
   color_map_name = "Blues",
@@ -142,7 +139,7 @@ lgb_model <- lgb.train(
 explainer <- gazer(lgb_model)
 
 # Calculate feature-specific R^2 values
-phi_rsq <- rsq(explainer, X, y)
+result <- rsq(explainer, X, y)
 
 # Calculate model R^2 for verification
 ypred <- predict(lgb_model, X)
@@ -151,13 +148,13 @@ sse <- sum((y - ypred)^2)
 model_rsq <- 1 - sse/sst
 
 # Print results
-print(phi_rsq)
-print(paste("Total R^2:", round(sum(phi_rsq), 4)))
+print(result)
+print(paste("Total R^2:", round(sum(result$rsq), 4)))
 print(paste("Model R^2:", round(model_rsq, 4)))
 
 # Visualize
 plot(
-  phi_rsq,
+  result,
   label = colnames(X),
   rotation=45,
   color_map_name = "Greens",
@@ -173,10 +170,10 @@ For large datasets, use parallel processing to speed up calculations:
 
 ```r
 # Use 4 cores for parallel processing
-phi_rsq <- qshap_rsq(explainer, X, y, ncore = 4)
+result <- rsq(explainer, X, y, ncore = 4)
 
 # Use all available cores
-phi_rsq <- qshap_rsq(explainer, X, y, ncore = -1)
+result <- rsq(explainer, X, y, ncore = -1)
 ```
 
 ### Sampling Large Datasets
@@ -185,10 +182,10 @@ When working with very large datasets, you can sample a subset:
 
 ```r
 # Sample 512 observations
-phi_rsq <- qshap_rsq(explainer, X, y, nsample = 512, random_state = 42)
+result <- rsq(explainer, X, y, nsample = 512, random_state = 42)
 
 # Or use a fraction of the data
-phi_rsq <- qshap_rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
+result <- rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
 ```
 
 ### Visualization Options
@@ -199,28 +196,28 @@ The package provides multiple visualization functions accessible through the `pl
 # Standard bar plot
 feature_names <- colnames(X)
 
-plot(phi_rsq, label = feature_names, color_map_name = "Blues", rotation=45)
+plot(result, label = feature_names, color_map_name = "Blues", rotation=45)
 
 # Horizontal bar plot
-plot(phi_rsq, label = feature_names, horizontal = TRUE)
+plot(result, label = feature_names, horizontal = TRUE)
 
 # Elbow plot (top features)
-plot(phi_rsq, type = "elbow", label = feature_names, max_comp = 10, rotation=45)
+plot(result, type = "elbow", label = feature_names, max_comp = 10, rotation=45)
 
 # Cumulative explained variance
-plot(phi_rsq, type = "cumu", label = feature_names, max_comp = 10)
+plot(result, type = "cumu", label = feature_names, max_comp = 10)
 
 # Generalized correlation (sqrt of R²)
-plot(phi_rsq, type = "gcorr", label = feature_names, rotation=45)
+plot(result, type = "gcorr", label = feature_names, rotation=45)
 ```
 
 **Note:** The legacy `vis$*` interface is still supported for backward compatibility:
 
 ```r
-vis$rsq(phi_rsq, label = feature_names)
-vis$elbow(phi_rsq, label = feature_names, max_comp = 10)
-vis$cumu(phi_rsq, label = feature_names, max_comp = 10)
-vis$gcorr(phi_rsq, label = feature_names)
+vis$rsq(result, label = feature_names)
+vis$elbow(result, label = feature_names, max_comp = 10)
+vis$cumu(result, label = feature_names, max_comp = 10)
+vis$gcorr(result, label = feature_names)
 ```
 
 ## Citation
@@ -239,14 +236,10 @@ vis$gcorr(phi_rsq, label = feature_names)
 
 - `gazer(model)`: Create a Q-SHAP explainer from a trained model
   - Returns a `qshapr_tree_explainer` object with `print()` and `summary()` methods
-- `rsq(explainer, X, y, ...)`: **[Recommended]** Calculate feature-specific R² values
+- `rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
   - Returns a `qshap_result` object with enhanced formatting and methods
   - Automatically extracts feature names and includes metadata
   - Provides `print()`, `summary()`, and `as.data.frame()` methods
-  - Alias for `qshap_rsq()` with enhanced output
-- `qshap_rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
-  - Returns a `qshap_rsq` object (list) for backward compatibility
-  - Use `rsq()` for a more user-friendly interface
 - `qshap_result(rsq, feature_names, ...)`: Create a Q-SHAP result object
   - Returns a `qshap_result` object with `print()`, `summary()`, and `as.data.frame()` methods
 - `loss(explainer, X, y)`: **[Recommended]** Calculate feature-specific loss contributions
@@ -282,16 +275,8 @@ summary(explainer)
 Stores Q-SHAP R² results with rich metadata and convenient methods.
 
 ```r
-# Recommended: Use rsq() wrapper for automatic creation
+# Use rsq() to calculate feature-specific R² values
 result <- rsq(explainer, X, y)
-
-# Alternative: Create from qshap_rsq output
-phi_rsq <- qshap_rsq(explainer, X, y)
-result <- qshap_result(
-  rsq = phi_rsq$rsq,
-  feature_names = colnames(X),
-  n_samples = nrow(X)
-)
 
 # Print top contributing features (default: top 10)
 print(result)
@@ -311,24 +296,6 @@ summary(result, n = 5)  # Show top 5 features
 
 # Convert to data frame for further analysis
 df <- as.data.frame(result)
-```
-
-#### `qshap_rsq`
-
-The `qshap_rsq` object supports the new `summary()` method:
-
-```r
-# Calculate R² contributions
-phi_rsq <- qshap_rsq(explainer, X, y)
-
-# Print basic info
-print(phi_rsq)
-#> qshap_rsq object
-#> - rsq length: 8
-
-# Get detailed summary with top features
-summary(phi_rsq, n = 10)  # Show top 10 features (default)
-summary(phi_rsq, n = 5)   # Show top 5 features
 ```
 
 ### Visualization Functions
