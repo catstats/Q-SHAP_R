@@ -22,3 +22,4 @@ A matrix of loss contributions with dimensions (n_samples, n_features)
 Computes the feature-specific loss contributions using Q-SHAP decomposition.
 This is an internal function typically called by \code{rsq()}.
 }
+\keyword{internal}
