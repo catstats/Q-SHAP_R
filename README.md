@@ -221,10 +221,8 @@ plot(result, type = "gcorr", label = feature_names, rotation=45)
   - Provides `print()`, `summary()`, and `as.data.frame()` methods
 - `qshap_result(rsq, feature_names, ...)`: Create a Q-SHAP result object
   - Returns a `qshap_result` object with `print()`, `summary()`, and `as.data.frame()` methods
-- `loss(explainer, X, y)`: **[Recommended]** Calculate feature-specific loss contributions
-  - Alias for `qshap_loss()` with shorter function name
-- `qshap_loss(explainer, X, y)`: Calculate feature-specific loss contributions
-  - Returns a matrix of loss contributions
+- `loss(explainer, X, y)`: Calculate feature-specific loss contributions
+
 
 ### S3 Classes
 
