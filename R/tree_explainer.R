@@ -10,12 +10,12 @@ NULL
 #' Creates an explainer object for computing feature-specific Shapley values
 #' from a trained tree ensemble model. Supports XGBoost and LightGBM models.
 #' 
-#' @param tree_model A trained tree model object (xgb.Booster or lgb.Booster)
-#' @param max_depth Maximum depth of trees (optional, extracted from model if not provided)
-#' @param base_score Base score for predictions (optional, extracted from model if not provided)
-#' @param ... Additional arguments (currently unused)
+#' @param model A model object of class \class{xgboost} or \class{xgb.Booster} from \pkg{xgboost}, or class \class{lgb.Booster} from \pkg{lightgbm}
+#' @param max_depth Maximum depth of trees, extracted from \code{model} by default.
+#' @param base_score Base score for predictions, extracted from \code{model} by default.
+#' @param ... Additional arguments, for future use
 #' 
-#' @return A qshapr_tree_explainer object containing the model information and
+#' @return A \class{qshapr_tree_explainer} object containing the model information and
 #'   preprocessed tree structures for fast Shapley value computation
 #'   
 #' @examples
@@ -33,21 +33,21 @@ NULL
 #' }
 #' 
 #' @export
-gazer <- function(tree_model, max_depth = NULL, base_score = NULL, ...) {
+gazer <- function(model, max_depth = NULL, base_score = NULL, ...) {
   UseMethod("gazer")
 }
 
 #' @export
-gazer.xgb.Booster <- function(tree_model, ...) {
+gazer.xgb.Booster <- function(model, ...) {
 
 
   tmp <- tempfile(fileext = ".json")
-  xgboost::xgb.save(tree_model, tmp)
+  xgboost::xgb.save(model, tmp)
   model_json <- jsonlite::fromJSON(tmp, simplifyVector = FALSE)
   unlink(tmp)
 
   # For version 3.1.3.1 and later, we can get max_depth from attributes
-  max_depth <- if (!is.null(attributes(tree_model)$params$max_depth)) attributes(tree_model)$params$max_depth else 6
+  max_depth <- if (!is.null(attributes(model)$params$max_depth)) attributes(model)$params$max_depth else 6
 
   # Extract base_score - handle various JSON formats
   base_score_raw <- model_json$learner$learner_model_param$base_score
@@ -67,7 +67,7 @@ gazer.xgb.Booster <- function(tree_model, ...) {
   }
 
   # eta: try params first, else JSON
-  # eta <- tree_model$params$eta
+  # eta <- model$params$eta
   # if (is.null(eta)) {
   #   # common JSON locations depending on xgboost build
   #   eta <- model_json$learner$gradient_booster$gbtree_train_param$learning_rate
@@ -79,7 +79,7 @@ gazer.xgb.Booster <- function(tree_model, ...) {
   xgb_trees <- xgb_formatter(model_json, max_depth)
 
   explainer <- new_qshapr_tree_explainer(
-    model = tree_model,
+    model = model,
     model_type = "xgboost",
     max_depth = max_depth,
     base_score = base_score,
@@ -93,15 +93,15 @@ gazer.xgb.Booster <- function(tree_model, ...) {
 }
 
 #' @export
-gazer.lgb.Booster <- function(tree_model, max_depth = NULL, ...) {
+gazer.lgb.Booster <- function(model, max_depth = NULL, ...) {
   # Get max_depth from model parameters or use default
-  max_depth <- if (!is.null(tree_model$params$max_depth)) tree_model$params$max_depth else 31
+  max_depth <- if (!is.null(model$params$max_depth)) model$params$max_depth else 31
   
   # Format LightGBM trees
-  lgb_trees <- lgb_formatter(tree_model, max_depth)
+  lgb_trees <- lgb_formatter(model, max_depth)
 
   explainer <- new_qshapr_tree_explainer(
-    model = tree_model,
+    model = model,
     model_type = "lightgbm",
     max_depth = max_depth,
     base_score = NULL,
@@ -115,12 +115,12 @@ gazer.lgb.Booster <- function(tree_model, max_depth = NULL, ...) {
 }
 
 # #' @export
-# gazer.gbm <- function(tree_model, max_depth = NULL, ...) {
+# gazer.gbm <- function(model, max_depth = NULL, ...) {
 # }
 
 #' @export
-gazer.default <- function(tree_model, ...) {
-  stop(sprintf("gazer not implemented for class %s", class(tree_model)[1]))
+gazer.default <- function(model, ...) {
+  stop(sprintf("gazer not implemented for class %s", class(model)[1]))
 }
 
 #' Calculate Q-SHAP Loss Contributions

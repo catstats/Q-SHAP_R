@@ -4,19 +4,19 @@
 \alias{gazer}
 \title{Create a QSHAPR Tree Explainer}
 \usage{
-gazer(tree_model, max_depth = NULL, base_score = NULL, ...)
+gazer(model, max_depth = NULL, base_score = NULL, ...)
 }
 \arguments{
-\item{tree_model}{A trained tree model object (xgb.Booster or lgb.Booster)}
+\item{model}{A model object of class \class{xgboost} or \class{xgb.Booster} from \pkg{xgboost}, or class \class{lgb.Booster} from \pkg{lightgbm}}
 
-\item{max_depth}{Maximum depth of trees (optional, extracted from model if not provided)}
+\item{max_depth}{Maximum depth of trees, extracted from \code{model} by default.}
 
-\item{base_score}{Base score for predictions (optional, extracted from model if not provided)}
+\item{base_score}{Base score for predictions, extracted from \code{model} by default.}
 
-\item{...}{Additional arguments (currently unused)}
+\item{...}{Additional arguments, for future use}
 }
 \value{
-A qshapr_tree_explainer object containing the model information and
+A \class{qshapr_tree_explainer} object containing the model information and
   preprocessed tree structures for fast Shapley value computation
 }
 \description{
