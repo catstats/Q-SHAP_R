@@ -178,17 +178,6 @@ rsq.result <- rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
 
 ### Visualization Options
 
-#### Visualization Functions
-
-The recommended way to visualize Q-SHAP results is using the standard R `plot()` method:
-
-- `plot(x, type = "rsq", ...)`: Bar plot of R² values (default)
-- `plot(x, type = "elbow", ...)`: Elbow plot of top features
-- `plot(x, type = "cumu", ...)`: Cumulative explained variance plot
-- `plot(x, type = "gcorr", ...)`: Generalized correlation plot
-- `plot(x, type = "hist", ...)`: Histogram of R² values
-
-
 The package provides multiple visualization functions accessible through the `plot()` method:
 
 ```r
@@ -285,6 +274,16 @@ summary(result, n = 5)  # Show top 5 features
 # Convert to data frame for further analysis
 df <- as.data.frame(result)
 ```
+
+### Visualization Functions
+
+The recommended way to visualize Q-SHAP results is using the standard R `plot()` method:
+
+- `plot(x, type = "rsq", ...)`: Bar plot of R² values (default)
+- `plot(x, type = "elbow", ...)`: Elbow plot of top features
+- `plot(x, type = "cumu", ...)`: Cumulative explained variance plot
+- `plot(x, type = "gcorr", ...)`: Generalized correlation plot
+- `plot(x, type = "hist", ...)`: Histogram of R² values
 
 
 
