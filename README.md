@@ -292,6 +292,9 @@ series = {UAI '25}
 
 ```
 
+- Jiang, Z., Zhang, M., & Zhang, D. (2025). Fast calculation of feature contributions in boosting trees. *Proceedings of the 41st Conference on Uncertainty in Artificial Intelligence (UAI)*. 82:1859 - 1875
+
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
