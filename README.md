@@ -199,21 +199,6 @@ plot(rsq.result, type = "cumu", label = feature_names, max_comp = 10)
 plot(rsq.result, type = "gcorr", label = feature_names, rotation=45)
 ```
 
-## Citation
-
-```bibtex
-@inproceedings{10.5555/3762387.3762469,
-author = {Jiang, Zhongli and Zhang, Min and Zhang, Dabao},
-title = {Fast calculation of feature contributions in boosting trees},
-year = {2025},
-publisher = {JMLR.org},
-numpages = {17},
-location = {Rio de Janeiro, Brazil},
-series = {UAI '25}
-}
-
-```
-
 ## API Reference
 
 ### Main Functions
@@ -292,12 +277,20 @@ The recommended way to visualize Q-SHAP results is using the standard R `plot()`
 
 
 
-## References
+## Citation
 
-- Jiang, Z., Zhang, M., & Zhang, D. (2025). Fast calculation of feature contributions in boosting trees. *Proceedings of the 41st Conference on Uncertainty in Artificial Intelligence (UAI)*.
-- Lundberg, S. M., Erion, G., Chen, H., et al. (2020). From local explanations to global understanding with explainable AI for trees. *Nature Machine Intelligence*, 2(1), 56–67.
-- Karczmarz, A., et al. (2022). Improved feature importance computation for tree models based on the Banzhaf value. *Proceedings of the 38th Conference on Uncertainty in Artificial Intelligence (UAI).*
-- Bifet, A., Read, J., & Xu, C. (2022). Linear TreeSHAP. *Advances in Neural Information Processing Systems (NeurIPS)*, 35, 25818–25828.
+```bibtex
+@inproceedings{10.5555/3762387.3762469,
+author = {Jiang, Zhongli and Zhang, Min and Zhang, Dabao},
+title = {Fast calculation of feature contributions in boosting trees},
+year = {2025},
+publisher = {JMLR.org},
+numpages = {17},
+location = {Rio de Janeiro, Brazil},
+series = {UAI '25}
+}
+
+```
 
 ## Contributing
 
