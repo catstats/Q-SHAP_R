@@ -158,10 +158,10 @@ For large datasets, use parallel processing to speed up calculations:
 
 ```r
 # Use 4 cores for parallel processing
-result <- rsq(explainer, X, y, ncore = 4)
+rsq.result <- rsq(explainer, X, y, ncore = 4)
 
 # Use all available cores
-result <- rsq(explainer, X, y, ncore = -1)
+rsq.result <- rsq(explainer, X, y, ncore = -1)
 ```
 
 ### Sampling Large Datasets
@@ -170,13 +170,24 @@ When working with very large datasets, you can sample a subset:
 
 ```r
 # Sample 512 observations
-result <- rsq(explainer, X, y, nsample = 512, random_state = 42)
+rsq.result <- rsq(explainer, X, y, nsample = 512, random_state = 42)
 
 # Or use a fraction of the data
-result <- rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
+rsq.result <- rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
 ```
 
 ### Visualization Options
+
+#### Visualization Functions
+
+The recommended way to visualize Q-SHAP results is using the standard R `plot()` method:
+
+- `plot(x, type = "rsq", ...)`: Bar plot of R² values (default)
+- `plot(x, type = "elbow", ...)`: Elbow plot of top features
+- `plot(x, type = "cumu", ...)`: Cumulative explained variance plot
+- `plot(x, type = "gcorr", ...)`: Generalized correlation plot
+- `plot(x, type = "hist", ...)`: Histogram of R² values
+
 
 The package provides multiple visualization functions accessible through the `plot()` method:
 
@@ -184,19 +195,19 @@ The package provides multiple visualization functions accessible through the `pl
 # Standard bar plot
 feature_names <- colnames(X)
 
-plot(result, label = feature_names, color_map_name = "Blues", rotation=45)
+plot(rsq.result, label = feature_names, color_map_name = "Blues", rotation=45)
 
 # Horizontal bar plot
-plot(result, label = feature_names, horizontal = TRUE)
+plot(rsq.result, label = feature_names, horizontal = TRUE)
 
 # Elbow plot (top features)
-plot(result, type = "elbow", label = feature_names, max_comp = 10, rotation=45)
+plot(rsq.result, type = "elbow", label = feature_names, max_comp = 10, rotation=45)
 
 # Cumulative explained variance
-plot(result, type = "cumu", label = feature_names, max_comp = 10)
+plot(rsq.result, type = "cumu", label = feature_names, max_comp = 10)
 
 # Generalized correlation (sqrt of R²)
-plot(result, type = "gcorr", label = feature_names, rotation=45)
+plot(rsq.result, type = "gcorr", label = feature_names, rotation=45)
 ```
 
 ## Citation
@@ -275,15 +286,6 @@ summary(result, n = 5)  # Show top 5 features
 df <- as.data.frame(result)
 ```
 
-### Visualization Functions
-
-The recommended way to visualize Q-SHAP results is using the standard R `plot()` method:
-
-- `plot(x, type = "rsq", ...)`: Bar plot of R² values (default)
-- `plot(x, type = "elbow", ...)`: Elbow plot of top features
-- `plot(x, type = "cumu", ...)`: Cumulative explained variance plot
-- `plot(x, type = "gcorr", ...)`: Generalized correlation plot
-- `plot(x, type = "hist", ...)`: Histogram of R² values
 
 
 ## References
