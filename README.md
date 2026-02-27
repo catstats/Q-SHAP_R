@@ -294,11 +294,11 @@ The recommended way to visualize Q-SHAP results is using the standard R `plot()`
 
 ## References
 
-- Jiang, Z., Zhang, M., & Zhang, D. Fast Calculation of Feature Contributions in Boosting Trees. In The 41st Conference on Uncertainty in Artificial Intelligence.
-- Lundberg, Scott M., et al. "From local explanations to global understanding with explainable AI for trees." Nature Machine Intelligence 2.1 (2020): 56-67.
-- Karczmarz, Adam, et al. "Improved feature importance computation for tree models based on the Banzhaf value." Uncertainty in Artificial Intelligence. PMLR, 2022.
-- Bifet, Albert, Jesse Read, and Chao Xu. "Linear tree shap." Advances in Neural Information Processing Systems 35 (2022): 25818-25828.
-- Chen, Tianqi, and Carlos Guestrin. "Xgboost: A scalable tree boosting system." Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. 2016.
+- Jiang, Z., Zhang, M., & Zhang, D. Fast calculation of feature contributions in boosting trees. *The 41st Conference on Uncertainty in Artificial Intelligence.*
+- Lundberg, Scott M., et al. "From local explanations to global understanding with explainable AI for trees." *Nature Machine Intelligence* 2.1 (2020): 56-67.
+- Karczmarz, Adam, et al. "Improved feature importance computation for tree models based on the banzhaf value." *Uncertainty in Artificial Intelligence*. PMLR, 2022.
+- Bifet, Albert, Jesse Read, and Chao Xu. "Linear tree shap." *Advances in Neural Information Processing Systems 35* (2022): 25818-25828.
+- Chen, Tianqi, and Carlos Guestrin. "Xgboost: A scalable tree boosting system." *Proceedings of the 22nd acm sigkdd international conference on knowledge discovery and data mining*. 2016.
 
 ## Contributing
 
