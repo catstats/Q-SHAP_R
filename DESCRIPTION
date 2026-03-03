@@ -6,11 +6,10 @@ Date: 2026-03-02
 Authors@R: c(person("Steven","He",role="aut",email="hess1@uci.edu"),
              person("Zhongli","Jiang",role=c("aut","cre"),email="zhongli.jiang.stats@gmail.com"),
              person("Dabao","Zhang",role="aut",email="zdb969@hs.uci.edu"))
-Description: Computes feature-specific R-squared values using Shapley decomposition 
-    of the total R-squared for Boosting Trees in polynomial time. Supports XGBoost 
-    and LightGBM models with parallel processing capabilities. Based on the method 
-    described in Jiang, Zhang, and Zhang (2025) "Fast Calculation of Feature 
-    Contributions in Boosting Trees".
+Description: Computes feature-specific R-squared values using 'Shapley' decomposition 
+    of the total R-squared for Boosting Trees in polynomial time. Supports 'XGBoost' 
+    and 'LightGBM' models with parallel processing capabilities. Based on the method 
+    described in Jiang et al. (2025) "Fast Calculation of Feature Contributions in Boosting Trees".
 License: GPL (>= 2)
 URL: https://github.com/catstats/Q-SHAP_R
 BugReports: https://github.com/catstats/Q-SHAP_R/issues
