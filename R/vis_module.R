@@ -1,3 +1,6 @@
+#' @import ggplot2
+NULL
+
 #' Visualization Module for Q-SHAP Results
 #' 
 #' An environment containing visualization functions for Q-SHAP results.
@@ -74,7 +77,7 @@ plot.qshap_rsq <- function(x, y = NULL,
   }
 
   if (is.null(rsq_values)) {
-    stop("Cannot find R² contributions in this qshap_rsq object. Expected one of: $rsq, $phi_rsq, $contrib.")
+    stop("Cannot find R^2 contributions in this qshap_rsq object. Expected one of: $rsq, $phi_rsq, $contrib.")
   }
 
   rsq_values <- as.numeric(rsq_values)
@@ -111,11 +114,11 @@ print.qshap_rsq <- function(x, ...) {
 #' @param ... Additional arguments (currently unused)
 #' @export
 summary.qshap_rsq <- function(object, n = 10, ...) {
-  cat("Q-SHAP R² Summary\n")
+  cat("Q-SHAP R^2 Summary\n")
   cat("=================\n\n")
   
   if (is.null(object$rsq)) {
-    cat("No R² values available in this object.\n")
+    cat("No R^2 values available in this object.\n")
     return(invisible(object))
   }
   
@@ -123,7 +126,7 @@ summary.qshap_rsq <- function(object, n = 10, ...) {
   total_rsq <- sum(rsq, na.rm = TRUE)
   
   cat("Overall Statistics:\n")
-  cat("  Total R²:", round(total_rsq, 6), "\n")
+  cat("  Total R^2:", round(total_rsq, 6), "\n")
   cat("  Number of features:", length(rsq), "\n")
   
   # Add SD and CI information if available
@@ -137,20 +140,20 @@ summary.qshap_rsq <- function(object, n = 10, ...) {
     cat("  Loss matrix dim:", paste(dim(object$loss), collapse = " x "), "\n")
   }
   
-  cat("\nR² Distribution:\n")
+  cat("\nR^2 Distribution:\n")
   cat("  Min:", round(min(rsq, na.rm = TRUE), 6), "\n")
-  cat("  Q1:", round(quantile(rsq, 0.25, na.rm = TRUE), 6), "\n")
-  cat("  Median:", round(median(rsq, na.rm = TRUE), 6), "\n")
+  cat("  Q1:", round(stats::quantile(rsq, 0.25, na.rm = TRUE), 6), "\n")
+  cat("  Median:", round(stats::median(rsq, na.rm = TRUE), 6), "\n")
   cat("  Mean:", round(mean(rsq, na.rm = TRUE), 6), "\n")
-  cat("  Q3:", round(quantile(rsq, 0.75, na.rm = TRUE), 6), "\n")
+  cat("  Q3:", round(stats::quantile(rsq, 0.75, na.rm = TRUE), 6), "\n")
   cat("  Max:", round(max(rsq, na.rm = TRUE), 6), "\n")
   
   # Count significant features
   sig_features <- sum(rsq > 0.01, na.rm = TRUE)
-  cat("\nSignificant Features (R² > 0.01):", sig_features, "\n")
+  cat("\nSignificant Features (R^2 > 0.01):", sig_features, "\n")
   
   # Show top N features
-  cat("\nTop", min(n, length(rsq)), "features by R²:\n")
+  cat("\nTop", min(n, length(rsq)), "features by R^2:\n")
   
   # Get feature names if available (from names attribute)
   feature_names <- names(rsq)
@@ -175,7 +178,7 @@ summary.qshap_rsq <- function(object, n = 10, ...) {
   }
   
   df <- df[order(df$R_squared, decreasing = TRUE), ]
-  df <- head(df, n)
+  df <- utils::head(df, n)
   
   # Print as formatted table
   print(df, row.names = FALSE, digits = 4)
@@ -209,9 +212,9 @@ vis$rsq <- function(
   model_rsq = TRUE,
   max_feature = 10,
   cutoff = 0,
-  title = "Shapley R²",
+  title = expression(paste("Shapley ", R^2)),
   xtitle = "Feature",
-  ytitle = "R²",
+  ytitle = expression(R^2),
   rotation = 0,
   label = NULL,
   decimal = 3,
@@ -311,13 +314,14 @@ vis$rsq <- function(
 
   # add model rsq annotation
   if (model_rsq) {
-    ann <- paste0("Model R²: ", formatC(x_sum, format = "f", digits = 3))
+    ann <- bquote("Model " * R^2 * ": " * .(formatC(x_sum, format = "f", digits = 3)))
     p <- p + annotate("text",
       x = if (!horizontal) show_len else 1,
       y = max(df$value, na.rm = TRUE),
       label = ann,
       hjust = 1, vjust = 1,
-      size = 4
+      size = 4,
+      parse = TRUE
     )
   }
 
@@ -518,13 +522,14 @@ vis$cumu <- function(
     # total R² reference (dashed) + label
     geom_hline(yintercept = r2, linetype = "dashed", linewidth = 0.7, color = "grey40") +
     geom_text(
-      data = data.frame(x = max_comp, y = r2, lab = paste0("Total R²: ", formatC(r2, format = "f", digits = 3))),
-      aes(x = x, y = y, label = lab),
+      data = data.frame(x = max_comp, y = r2),
+      aes(x = x, y = y, label = bquote("Total " * R^2 * ": " * .(formatC(r2, format = "f", digits = 3)))),
       inherit.aes = FALSE,
       hjust = 1,
       vjust = -0.6,
       size = 4,
-      fontface = "bold"
+      fontface = "bold",
+      parse = TRUE
     ) +
     scale_x_continuous(
       breaks = seq_len(max_comp),
@@ -587,8 +592,8 @@ vis$gcorr <- function(
 vis$hist <- function(
   x,
   bins = 30,
-  title = "Distribution of Shapley R² Contributions",
-  xtitle = "Shapley R² contribution",
+  title = expression(paste("Distribution of Shapley ", R^2, " Contributions")),
+  xtitle = expression(paste("Shapley ", R^2, " contribution")),
   ytitle = "Density",
   trim_nonfinite = TRUE,
   show_density = TRUE,
@@ -635,8 +640,8 @@ vis$hist <- function(
 # Density-only plot of Shapley R^2 contributions
 vis$density <- function(
   x,
-  title = "Density of Shapley R² Contributions",
-  xtitle = "Shapley R² contribution",
+  title = expression(paste("Density of Shapley ", R^2, " Contributions")),
+  xtitle = expression(paste("Shapley ", R^2, " contribution")),
   ytitle = "Density",
   trim_nonfinite = TRUE,
   density_adjust = 1,

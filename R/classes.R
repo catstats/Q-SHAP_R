@@ -484,22 +484,22 @@ qshap_result <- function(rsq,
 #' @export
 print.qshap_result <- function(x, n = 10, ...) {
   cat("<qshap_result>\n")
-  cat("  Total R²:", round(x$total_rsq, 4), "\n")
+  cat("  Total R^2:", round(x$total_rsq, 4), "\n")
   cat("  Number of features:", x$n_features, "\n")
   if (!is.null(x$n_samples)) {
     cat("  Number of samples:", x$n_samples, "\n")
   }
   
-  cat("\nTop", min(n, x$n_features), "features by R²:\n")
+  cat("\nTop", min(n, x$n_features), "features by R^2:\n")
   
-  # Create a data frame and sort by R²
+  # Create a data frame and sort by R^2
   df <- data.frame(
     Feature = x$feature_names,
     R_squared = x$rsq,
     stringsAsFactors = FALSE
   )
   df <- df[order(df$R_squared, decreasing = TRUE), ]
-  df <- head(df, n)
+  df <- utils::head(df, n)
   
   # Print as a formatted table
   print(df, row.names = FALSE, digits = 4)
@@ -521,23 +521,23 @@ summary.qshap_result <- function(object, ...) {
   cat("======================\n\n")
   
   cat("Overall Statistics:\n")
-  cat("  Total R²:", round(object$total_rsq, 6), "\n")
+  cat("  Total R^2:", round(object$total_rsq, 6), "\n")
   cat("  Number of features:", object$n_features, "\n")
   if (!is.null(object$n_samples)) {
     cat("  Number of samples:", object$n_samples, "\n")
   }
   
-  cat("\nR² Distribution:\n")
+  cat("\nR^2 Distribution:\n")
   cat("  Min:", round(min(object$rsq, na.rm = TRUE), 6), "\n")
-  cat("  Q1:", round(quantile(object$rsq, 0.25, na.rm = TRUE), 6), "\n")
-  cat("  Median:", round(median(object$rsq, na.rm = TRUE), 6), "\n")
+  cat("  Q1:", round(stats::quantile(object$rsq, 0.25, na.rm = TRUE), 6), "\n")
+  cat("  Median:", round(stats::median(object$rsq, na.rm = TRUE), 6), "\n")
   cat("  Mean:", round(mean(object$rsq, na.rm = TRUE), 6), "\n")
-  cat("  Q3:", round(quantile(object$rsq, 0.75, na.rm = TRUE), 6), "\n")
+  cat("  Q3:", round(stats::quantile(object$rsq, 0.75, na.rm = TRUE), 6), "\n")
   cat("  Max:", round(max(object$rsq, na.rm = TRUE), 6), "\n")
   
   # Count significant features
   sig_features <- sum(object$rsq > 0.01, na.rm = TRUE)
-  cat("\nSignificant Features (R² > 0.01):", sig_features, "\n")
+  cat("\nSignificant Features (R^2 > 0.01):", sig_features, "\n")
   
   invisible(object)
 }
@@ -556,7 +556,7 @@ as.data.frame.qshap_result <- function(x, row.names = NULL, optional = FALSE, ..
     stringsAsFactors = FALSE
   )
   
-  # Sort by R² descending
+  # Sort by R^2 descending
   df <- df[order(df$rsq, decreasing = TRUE), ]
   rownames(df) <- NULL
   

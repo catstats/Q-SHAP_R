@@ -1,3 +1,5 @@
+#' @import lightgbm
+#' @importFrom stats predict
 NULL
 
 # Loss implementation for LightGBM model
@@ -39,14 +41,14 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
       # Calculate residual: y - prediction_from_iterations_1_to_(i-1)
       # Use tryCatch to handle potential LightGBM prediction issues with complex trees
       tryCatch({
-        pred_partial <- predict(model, x, num_iteration = i - 1)
+        pred_partial <- stats::predict(model, x, num_iteration = i - 1)
         local_res <- y - pred_partial
       }, error = function(e) {
         # Fallback: use a safer approach for complex trees
         # Calculate cumulative predictions manually using SHAP contributions
         if (i == 2) {
           # For second tree, use first tree SHAP values
-          shap_i_minus_1 <- predict(model, x, type = "contrib", num_iteration = 1)
+          shap_i_minus_1 <- stats::predict(model, x, type = "contrib", num_iteration = 1)
           pred_partial <- rowSums(shap_i_minus_1)  # Sum includes bias
           local_res <- y - pred_partial
         } else {
@@ -62,11 +64,11 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
     tryCatch({
       if (i == 1) {
         # For the first tree, get SHAP values from just the first iteration
-        shap_contrib_matrix <- predict(model, x, type = "contrib", num_iteration = 1)
+        shap_contrib_matrix <- stats::predict(model, x, type = "contrib", num_iteration = 1)
         # Remove the bias column (last column) to get just feature contributions
         T0_x_tree <- shap_contrib_matrix[, -ncol(shap_contrib_matrix), drop = FALSE]
       } else {
-        shap_i <- predict(
+        shap_i <- stats::predict(
             model, x,
             type = "contrib",
             start_iteration = i - 1,  # LightGBM is 0-based here
@@ -80,7 +82,7 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
     }, error = function(e) {
       # Fallback: use full model SHAP divided by number of trees
       warning(paste("LightGBM SHAP calculation failed for iteration", i, "- using fallback approach"))
-      full_shap <- predict(model, x, type = "contrib")
+      full_shap <- stats::predict(model, x, type = "contrib")
       T0_x_tree <- full_shap[, -ncol(full_shap), drop = FALSE] / num_tree
     })
     
@@ -104,12 +106,9 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
 # Formats a LightGBM model into a list of simple_tree objects
 #' @keywords internal
 lgb_formatter <- function(lgb_model, max_depth) {
-  # Check if lightgbm and treeshap are available
+  # Check if lightgbm is available
   if (!requireNamespace("lightgbm", quietly = TRUE)) {
     stop("lightgbm package is required for LightGBM support. Please install it with: install.packages('lightgbm')")
-  }
-  if (!requireNamespace("treeshap", quietly = TRUE)) {
-    stop("treeshap package is required for LightGBM tree extraction. Please install it with: install.packages('treeshap')")
   }
   
   # Get number of trees from model
@@ -308,5 +307,3 @@ lgb_tree_to_simple <- function(tree_structure, max_depth) {
     node_count = node_count
   )
 }
-
-

@@ -10,12 +10,12 @@ NULL
 #' Creates an explainer object for computing feature-specific Shapley values
 #' from a trained tree ensemble model. Supports XGBoost and LightGBM models.
 #' 
-#' @param model A model object of class \class{xgboost} or \class{xgb.Booster} from \pkg{xgboost}, or class \class{lgb.Booster} from \pkg{lightgbm}
+#' @param model A model object of class \code{xgboost} or \code{xgb.Booster} from \pkg{xgboost}, or class \code{lgb.Booster} from \pkg{lightgbm}
 #' @param max_depth Maximum depth of trees, extracted from \code{model} by default.
 #' @param base_score Base score for predictions, extracted from \code{model} by default.
 #' @param ... Additional arguments, for future use
 #' 
-#' @return A \class{qshap_tree_explainer} object containing the model information and
+#' @return A class of \code{qshap_tree_explainer} object containing the model information and
 #'   preprocessed tree structures for fast Shapley value computation
 #'   
 #' @examples
@@ -306,7 +306,7 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
   )
 
   worker <- function(idx) {
-  lc <- qshap::qshap_loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
+  lc <- qshap::loss(explainer, x[idx, , drop = FALSE], y[idx], y_mean_ori)
 
   if (local) {
     # keep full chunk loss matrix

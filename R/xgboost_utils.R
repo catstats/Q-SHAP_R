@@ -1,4 +1,5 @@
 #' @importFrom xgboost xgb.model.dt.tree
+#' @importFrom stats predict
 NULL
 
 
@@ -43,18 +44,18 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
       
       # SHAP values for tree 0 only
       # iterationrange = c(0, 1) means tree 0 only (0-based, exclusive end)
-      shap_tree_i <- predict(model[i], x, predcontrib = TRUE)
+      shap_tree_i <- stats::predict(model[i], x, predcontrib = TRUE)
       T0_x_tree <- shap_tree_i[, -ncol(shap_tree_i), drop = FALSE]
     } else { # For subsequent trees (tree i-1 in 0-based indexing)
       # Calculate residual: y - prediction_from_trees_0_to_(i-2)
       # For tree i-1, we need prediction from trees 0 to i-2 (i.e., before tree i-1)
       # iterationrange = c(0, i-1) gives trees 0 to i-2
       #  but we can directly do slicing !!
-      pred_partial <- predict(model[1:(i-1)], x)
+      pred_partial <- stats::predict(model[1:(i-1)], x)
       local_res <- y - pred_partial
       
       # SHAP values for current tree
-      shap_i <- predict(model[i], x, predcontrib = TRUE)
+      shap_i <- stats::predict(model[i], x, predcontrib = TRUE)
       
       # Marginal SHAP contribution of tree i-1 (remove bias columns)
       T0_x_tree <- shap_i[, -ncol(shap_i), drop = FALSE]

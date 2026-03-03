@@ -7,7 +7,7 @@
 gazer(model, max_depth = NULL, base_score = NULL, ...)
 }
 \arguments{
-\item{model}{A model object of class \class{xgboost} or \class{xgb.Booster} from \pkg{xgboost}, or class \class{lgb.Booster} from \pkg{lightgbm}}
+\item{model}{A model object of class \code{xgboost} or \code{xgb.Booster} from \pkg{xgboost}, or class \code{lgb.Booster} from \pkg{lightgbm}}
 
 \item{max_depth}{Maximum depth of trees, extracted from \code{model} by default.}
 
@@ -16,7 +16,7 @@ gazer(model, max_depth = NULL, base_score = NULL, ...)
 \item{...}{Additional arguments, for future use}
 }
 \value{
-A \class{qshap_tree_explainer} object containing the model information and
+A class of \code{qshap_tree_explainer} object containing the model information and
   preprocessed tree structures for fast Shapley value computation
 }
 \description{
