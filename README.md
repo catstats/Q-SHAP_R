@@ -158,10 +158,10 @@ For large datasets, use parallel processing to speed up calculations:
 
 ```r
 # Use 4 cores for parallel processing
-result <- rsq(explainer, X, y, ncore = 4)
+rsq.result <- rsq(explainer, X, y, ncore = 4)
 
 # Use all available cores
-result <- rsq(explainer, X, y, ncore = -1)
+rsq.result <- rsq(explainer, X, y, ncore = -1)
 ```
 
 ### Sampling Large Datasets
@@ -170,10 +170,10 @@ When working with very large datasets, you can sample a subset:
 
 ```r
 # Sample 512 observations
-result <- rsq(explainer, X, y, nsample = 512, random_state = 42)
+rsq.result <- rsq(explainer, X, y, nsample = 512, random_state = 42)
 
 # Or use a fraction of the data
-result <- rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
+rsq.result <- rsq(explainer, X, y, nfrac = 0.1, random_state = 42)
 ```
 
 ### Visualization Options
@@ -184,29 +184,19 @@ The package provides multiple visualization functions accessible through the `pl
 # Standard bar plot
 feature_names <- colnames(X)
 
-plot(result, label = feature_names, color_map_name = "Blues", rotation=45)
+plot(rsq.result, label = feature_names, color_map_name = "Blues", rotation=45)
 
 # Horizontal bar plot
-plot(result, label = feature_names, horizontal = TRUE)
+plot(rsq.result, label = feature_names, horizontal = TRUE)
 
 # Elbow plot (top features)
-plot(result, type = "elbow", label = feature_names, max_comp = 10, rotation=45)
+plot(rsq.result, type = "elbow", label = feature_names, max_comp = 10, rotation=45)
 
 # Cumulative explained variance
-plot(result, type = "cumu", label = feature_names, max_comp = 10)
+plot(rsq.result, type = "cumu", label = feature_names, max_comp = 10)
 
 # Generalized correlation (sqrt of R²)
-plot(result, type = "gcorr", label = feature_names, rotation=45)
-```
-
-## Citation
-
-```bibtex
-@inproceedings{jiangfast,
-  title={Fast Calculation of Feature Contributions in Boosting Trees},
-  author={Jiang, Zhongli and Zhang, Min and Zhang, Dabao},
-  booktitle={The 41st Conference on Uncertainty in Artificial Intelligence}
-}
+plot(rsq.result, type = "gcorr", label = feature_names, rotation=45)
 ```
 
 ## API Reference
@@ -286,13 +276,25 @@ The recommended way to visualize Q-SHAP results is using the standard R `plot()`
 - `plot(x, type = "hist", ...)`: Histogram of R² values
 
 
-## References
 
-- Jiang, Z., Zhang, M., & Zhang, D. Fast Calculation of Feature Contributions in Boosting Trees. In The 41st Conference on Uncertainty in Artificial Intelligence.
-- Lundberg, Scott M., et al. "From local explanations to global understanding with explainable AI for trees." Nature Machine Intelligence 2.1 (2020): 56-67.
-- Karczmarz, Adam, et al. "Improved feature importance computation for tree models based on the Banzhaf value." Uncertainty in Artificial Intelligence. PMLR, 2022.
-- Bifet, Albert, Jesse Read, and Chao Xu. "Linear tree shap." Advances in Neural Information Processing Systems 35 (2022): 25818-25828.
-- Chen, Tianqi, and Carlos Guestrin. "Xgboost: A scalable tree boosting system." Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. 2016.
+## Citation
+
+```bibtex
+@inproceedings{10.5555/3762387.3762469,
+author = {Jiang, Zhongli and Zhang, Min and Zhang, Dabao},
+title = {Fast calculation of feature contributions in boosting trees},
+year = {2025},
+publisher = {JMLR.org},
+numpages = {17},
+location = {Rio de Janeiro, Brazil},
+series = {UAI '25}
+}
+
+```
+
+## Reference
+- Jiang, Z., Zhang, M., & Zhang, D. (2025). Fast calculation of feature contributions in boosting trees. *Proceedings of the 41st Conference on Uncertainty in Artificial Intelligence (UAI)*, 82:1859 - 1875
+
 
 ## Contributing
 
