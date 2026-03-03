@@ -23,7 +23,7 @@ Imports: Rcpp (>= 1.0.14),
   jsonlite,
   methods,
   progress
-Suggests: shiny, treeshap
+Suggests: shiny
 LinkingTo: Rcpp,
   RcppEigen
 RoxygenNote: 7.3.2
