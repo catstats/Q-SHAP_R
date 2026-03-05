@@ -2,7 +2,7 @@
 
 [![R-hub](https://github.com/catstats/Q-SHAP_R/actions/workflows/rhub.yaml/badge.svg)](https://github.com/catstats/Q-SHAP_R/actions/workflows/rhub.yaml)
 
-This R package computes feature-specific $R^2$ values using Shapley decomposition of the total $R^2$ for Boosting Trees in polynomial time based on the [paper](https://arxiv.org/abs/2407.03515).
+This R package computes feature-specific $R^2$ values using Shapley decomposition of the total $R^2$ for Boosting Trees in polynomial time based on the [paper]([https://arxiv.org/abs/2407.03515](https://dl.acm.org/doi/10.5555/3762387.3762469)).
 
 Currently supports **XGBoost** and **LightGBM** models.
 
