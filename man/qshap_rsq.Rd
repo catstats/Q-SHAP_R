@@ -54,32 +54,16 @@ Computes feature-specific R-squared values using Q-SHAP decomposition.
 Supports parallel processing and sampling for large datasets.
 }
 \examples{
-\dontrun{
 library(xgboost)
-
-# Generate sample data
 set.seed(42)
-n <- 500
-X <- matrix(rnorm(n * 5), nrow = n, ncol = 5)
-colnames(X) <- paste0("Feature_", 1:5)
-y <- 2 * X[,1] + 1.5 * X[,2] - 0.8 * X[,3] + rnorm(n, 0, 0.5)
-
-# Train model
-model <- xgboost(data = X, label = y, nrounds = 50, max_depth = 3, verbose = 0)
-
-# Create explainer
+n <- 100
+p <- 100
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 explainer <- gazer(model)
-
-# Calculate R-squared values
 phi_rsq <- qshap_rsq(explainer, X, y)
 print(phi_rsq)
-
-# With parallel processing
-phi_rsq_parallel <- qshap_rsq(explainer, X, y, ncore = 4)
-
-# With sampling
-phi_rsq_sampled <- qshap_rsq(explainer, X, y, nsample = 100, random_state = 42)
-}
 
 }
 \keyword{internal}

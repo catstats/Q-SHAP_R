@@ -23,14 +23,16 @@ This is a convenience alias for \code{qshap_loss()} that provides a shorter
 function name for calculating feature-specific loss contributions.
 }
 \examples{
-\dontrun{
-# Train a model
-model <- xgboost(X, y, nrounds = 100)
+library(xgboost)
+set.seed(42)
+n <- 100
+p <- 100
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 explainer <- gazer(model)
-
-# Calculate loss contributions using the shorter alias
 loss_matrix <- loss(explainer, X, y)
-}
+dim(loss_matrix)
 
 }
 \seealso{

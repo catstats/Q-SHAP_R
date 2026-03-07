@@ -74,23 +74,16 @@ This function provides a user-friendly interface for Q-SHAP R² computation:
 }
 }
 \examples{
-\dontrun{
-# Train a model
-model <- xgboost(X, y, nrounds = 100)
+library(xgboost)
+set.seed(42)
+n <- 100
+p <- 100
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 explainer <- gazer(model)
-
-# Calculate R² contributions
 result <- rsq(explainer, X, y)
-print(result)  # Shows top 10 features by default
-summary(result)  # Detailed summary
-df <- as.data.frame(result)  # Convert to data frame
-
-# With custom feature names
-result <- rsq(explainer, X, y, feature_names = c("Age", "Income", "Score"))
-
-# With parallel processing
-result <- rsq(explainer, X, y, ncore = 4)
-}
+print(result)
 
 }
 \seealso{

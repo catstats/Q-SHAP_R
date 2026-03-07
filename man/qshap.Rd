@@ -25,28 +25,15 @@ The method uses polynomial-time complexity for Shapley value calculation and
 includes built-in support for multi-core processing.
 }
 \examples{
-\dontrun{
-# Example with XGBoost
 library(xgboost)
-library(qshap)
-
-# Generate sample data
 set.seed(42)
-n <- 500
-X <- matrix(rnorm(n * 5), nrow = n, ncol = 5)
-colnames(X) <- paste0("Feature_", 1:5)
-y <- 2 * X[,1] + 1.5 * X[,2] - 0.8 * X[,3] + rnorm(n, 0, 0.5)
-
-# Train model
-model <- xgboost(data = X, label = y, nrounds = 50, max_depth = 3, verbose = 0)
-
-# Create explainer and calculate R-squared values
+n <- 100
+p <- 100
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 explainer <- gazer(model)
 phi_rsq <- rsq(explainer, X, y)
-
-# Visualize
-vis$rsq(phi_rsq, label = colnames(X))
-}
 
 }
 \references{

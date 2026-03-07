@@ -32,7 +32,7 @@
 #' library(xgboost)
 #' set.seed(42)
 #' n <- 100
-#' p <- 10
+#' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
 #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)

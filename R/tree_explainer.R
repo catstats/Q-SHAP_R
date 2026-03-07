@@ -22,7 +22,7 @@ NULL
 #' library(xgboost)
 #' set.seed(42)
 #' n <- 100
-#' p <- 10
+#' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
 #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
@@ -174,7 +174,7 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #' library(xgboost)
  #' set.seed(42)
  #' n <- 100
- #' p <- 10
+ #' p <- 100
  #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
  #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
  #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
@@ -400,7 +400,7 @@ if (local) {
 #' library(xgboost)
 #' set.seed(42)
 #' n <- 100
-#' p <- 10
+#' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
 #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
@@ -468,7 +468,7 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
 #' library(xgboost)
 #' set.seed(42)
 #' n <- 100
-#' p <- 10
+#' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
 #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)

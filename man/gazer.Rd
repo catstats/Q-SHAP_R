@@ -24,17 +24,13 @@ Creates an explainer object for computing feature-specific Shapley values
 from a trained tree ensemble model. Supports XGBoost and LightGBM models.
 }
 \examples{
-\dontrun{
 library(xgboost)
-
-# Train a simple XGBoost model
 set.seed(42)
-X <- matrix(rnorm(100 * 5), nrow = 100, ncol = 5)
-y <- rowSums(X[, 1:3]) + rnorm(100, 0, 0.1)
-model <- xgboost(data = X, label = y, nrounds = 10, verbose = 0)
-
-# Create explainer
+n <- 100
+p <- 100
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 explainer <- gazer(model)
-}
 
 }
