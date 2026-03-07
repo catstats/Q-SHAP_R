@@ -19,19 +19,15 @@ NULL
 #'   preprocessed tree structures for fast Shapley value computation
 #'   
 #' @examples
-#' \dontrun{
 #' library(xgboost)
-#' 
-#' # Train a simple XGBoost model
 #' set.seed(42)
-#' X <- matrix(rnorm(100 * 5), nrow = 100, ncol = 5)
-#' y <- rowSums(X[, 1:3]) + rnorm(100, 0, 0.1)
-#' model <- xgboost(data = X, label = y, nrounds = 10, verbose = 0)
-#' 
-#' # Create explainer
+#' n <- 100
+#' p <- 10
+#' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+#' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 #' explainer <- gazer(model)
-#' }
-#' 
+#'
 #' @export
 gazer <- function(model, max_depth = NULL, base_score = NULL, ...) {
   UseMethod("gazer")
@@ -175,33 +171,17 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #'   also contains \code{ci_lower} and \code{ci_upper} vectors representing Wald-style confidence intervals.
  #'   
  #' @examples
- #' \dontrun{
  #' library(xgboost)
- #' 
- #' # Generate sample data
  #' set.seed(42)
- #' n <- 500
- #' X <- matrix(rnorm(n * 5), nrow = n, ncol = 5)
- #' colnames(X) <- paste0("Feature_", 1:5)
- #' y <- 2 * X[,1] + 1.5 * X[,2] - 0.8 * X[,3] + rnorm(n, 0, 0.5)
- #' 
- #' # Train model
- #' model <- xgboost(data = X, label = y, nrounds = 50, max_depth = 3, verbose = 0)
- #' 
- #' # Create explainer
+ #' n <- 100
+ #' p <- 10
+ #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+ #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+ #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
  #' explainer <- gazer(model)
- #' 
- #' # Calculate R-squared values
  #' phi_rsq <- qshap_rsq(explainer, X, y)
  #' print(phi_rsq)
- #' 
- #' # With parallel processing
- #' phi_rsq_parallel <- qshap_rsq(explainer, X, y, ncore = 4)
- #' 
- #' # With sampling
- #' phi_rsq_sampled <- qshap_rsq(explainer, X, y, nsample = 100, random_state = 42)
- #' }
- #' 
+ #'
  #' @keywords internal
 qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = TRUE,
                       ci_out = TRUE, level = 0.95,
@@ -417,23 +397,16 @@ if (local) {
 #' }
 #'
 #' @examples
-#' \dontrun{
-#' # Train a model
-#' model <- xgboost(X, y, nrounds = 100)
+#' library(xgboost)
+#' set.seed(42)
+#' n <- 100
+#' p <- 10
+#' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+#' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 #' explainer <- gazer(model)
-#'
-#' # Calculate R² contributions
 #' result <- rsq(explainer, X, y)
-#' print(result)  # Shows top 10 features by default
-#' summary(result)  # Detailed summary
-#' df <- as.data.frame(result)  # Convert to data frame
-#'
-#' # With custom feature names
-#' result <- rsq(explainer, X, y, feature_names = c("Age", "Income", "Score"))
-#'
-#' # With parallel processing
-#' result <- rsq(explainer, X, y, ncore = 4)
-#' }
+#' print(result)
 #'
 #' @seealso \code{\link{qshap_result}}
 #' @export
@@ -492,14 +465,16 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
 #' @return A matrix of loss contributions with dimensions (n_samples, n_features)
 #'
 #' @examples
-#' \dontrun{
-#' # Train a model
-#' model <- xgboost(X, y, nrounds = 100)
+#' library(xgboost)
+#' set.seed(42)
+#' n <- 100
+#' p <- 10
+#' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+#' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 #' explainer <- gazer(model)
-#'
-#' # Calculate loss contributions using the shorter alias
 #' loss_matrix <- loss(explainer, X, y)
-#' }
+#' dim(loss_matrix)
 #'
 #' @seealso \code{\link{qshap_loss}}
 #' @export
