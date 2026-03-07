@@ -690,16 +690,17 @@ vis$density <- function(
 #' @return The ggplot2 plot object (invisibly)
 #'
 #' @examples
-#' \dontrun{
-#' # Works on qshap_rsq objects
-#' plot_qshap(phi_rsq, color_map_name = "viridis")
-#'
-#' # Works on numeric vectors
-#' plot_qshap(rsq_contributions, color_map_name = "viridis")
-#'
-#' # Interactive loss explorer (requires local=TRUE)
-#' # rsq_cons <- qshap_rsq(explainer, X, y, local = TRUE)
-#' # plot_qshap(rsq_cons[[2]], type = "loss")
+#' \donttest{
+#' library(xgboost)
+#' set.seed(42)
+#' n <- 100
+#' p <- 10
+#' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+#' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+#' explainer <- gazer(model)
+#' phi_rsq <- rsq(explainer, X, y)
+#' plot_qshap(phi_rsq)
 #' }
 #'
 #' @keywords internal
