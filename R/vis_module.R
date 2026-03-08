@@ -317,7 +317,7 @@ vis$rsq <- function(
 
   # add model rsq annotation
   if (model_rsq) {
-    ann <- bquote("Model " * R^2 * ": " * .(formatC(x_sum, format = "f", digits = 3)))
+    ann <- deparse(bquote("Model " * R^2 * ": " * .(formatC(x_sum, format = "f", digits = 3))))
     p <- p + annotate("text",
       x = if (!horizontal) show_len else 1,
       y = max(df$value, na.rm = TRUE),
