@@ -18,3 +18,7 @@
 \description{
 Coercion method to data.frame for qshap_result
 }
+\value{
+A \code{data.frame} with columns \code{feature} (character) and
+\code{rsq} (numeric), sorted by \code{rsq} in decreasing order.
+}

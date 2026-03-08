@@ -16,3 +16,8 @@
 \description{
 Print method for qshap_result
 }
+\value{
+The input \code{x} is returned invisibly. Called primarily for its side
+effect of printing a summary of the \code{qshap_result} object to the
+console.
+}

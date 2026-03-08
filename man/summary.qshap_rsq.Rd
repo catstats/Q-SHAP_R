@@ -16,3 +16,8 @@
 \description{
 Provides a summary of the qshap_rsq object, showing the top features by R-squared contribution
 }
+\value{
+The input \code{object} is returned invisibly. Called primarily for its
+side effect of printing a summary of the \code{qshap_rsq} object to the
+console.
+}

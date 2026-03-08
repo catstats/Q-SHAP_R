@@ -14,3 +14,8 @@
 \description{
 Print method for qshap_tree_explainer
 }
+\value{
+The input \code{x} is returned invisibly. Called primarily for its side
+effect of printing a summary of the \code{qshap_tree_explainer} object to
+the console.
+}

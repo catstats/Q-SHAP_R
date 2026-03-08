@@ -112,6 +112,9 @@ print.qshap_rsq <- function(x, ...) {
 #' @param object A \code{qshap_rsq} object
 #' @param n Integer number of top features to display (default: 10)
 #' @param ... Additional arguments (currently unused)
+#' @return The input \code{object} is returned invisibly. Called primarily for
+#'   its side effect of printing a summary of the \code{qshap_rsq} object to
+#'   the console.
 #' @export
 summary.qshap_rsq <- function(object, n = 10, ...) {
   cat("Q-SHAP R^2 Summary\n")
