@@ -14,3 +14,8 @@
 \description{
 Print method for simple_tree
 }
+\value{
+The input \code{x} is returned invisibly. Called primarily for its side
+effect of printing a summary of the \code{simple_tree} object to the
+console.
+}

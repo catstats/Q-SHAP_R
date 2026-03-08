@@ -115,6 +115,9 @@ simple_tree <- function(children_left,
 #' 
 #' @param x A simple_tree object
 #' @param ... Additional arguments (currently unused)
+#' @return The input \code{x} is returned invisibly. Called primarily for its
+#'   side effect of printing a summary of the \code{simple_tree} object to the
+#'   console.
 #' @export
 print.simple_tree <- function(x, ...) {
   cat("<simple_tree>\n")
@@ -232,6 +235,9 @@ tree_summary <- function(children_left,
 #' 
 #' @param x A tree_summary object
 #' @param ... Additional arguments (currently unused)
+#' @return The input \code{x} is returned invisibly. Called primarily for its
+#'   side effect of printing a summary of the \code{tree_summary} object to the
+#'   console.
 #' @export
 print.tree_summary <- function(x, ...) {
   cat("<tree_summary>\n")
@@ -337,6 +343,9 @@ validate_qshap_tree_explainer <- function(x) {
 #' 
 #' @param x A qshap_tree_explainer object
 #' @param ... Additional arguments (currently unused)
+#' @return The input \code{x} is returned invisibly. Called primarily for its
+#'   side effect of printing a summary of the \code{qshap_tree_explainer} object
+#'   to the console.
 #' @export
 print.qshap_tree_explainer <- function(x, ...) {
   cat("<qshap_tree_explainer>\n")
@@ -355,6 +364,9 @@ print.qshap_tree_explainer <- function(x, ...) {
 #' 
 #' @param object A qshap_tree_explainer object
 #' @param ... Additional arguments (currently unused)
+#' @return The input \code{object} is returned invisibly. Called primarily for
+#'   its side effect of printing a detailed summary of the
+#'   \code{qshap_tree_explainer} object to the console.
 #' @export
 summary.qshap_tree_explainer <- function(object, ...) {
   cat("Q-SHAP Tree Explainer Summary\n")
@@ -481,6 +493,9 @@ qshap_result <- function(rsq,
 #' @param x A qshap_result object
 #' @param n Integer number of top features to display (default: 10)
 #' @param ... Additional arguments (currently unused)
+#' @return The input \code{x} is returned invisibly. Called primarily for its
+#'   side effect of printing a summary of the \code{qshap_result} object to the
+#'   console.
 #' @export
 print.qshap_result <- function(x, n = 10, ...) {
   cat("<qshap_result>\n")
@@ -515,6 +530,9 @@ print.qshap_result <- function(x, n = 10, ...) {
 #' 
 #' @param object A qshap_result object
 #' @param ... Additional arguments (currently unused)
+#' @return The input \code{object} is returned invisibly. Called primarily for
+#'   its side effect of printing a detailed summary of the \code{qshap_result}
+#'   object to the console.
 #' @export
 summary.qshap_result <- function(object, ...) {
   cat("Q-SHAP Results Summary\n")
@@ -548,6 +566,8 @@ summary.qshap_result <- function(object, ...) {
 #' @param row.names Not used
 #' @param optional Not used
 #' @param ... Additional arguments (currently unused)
+#' @return A \code{data.frame} with columns \code{feature} (character) and
+#'   \code{rsq} (numeric), sorted by \code{rsq} in decreasing order.
 #' @export
 as.data.frame.qshap_result <- function(x, row.names = NULL, optional = FALSE, ...) {
   df <- data.frame(
