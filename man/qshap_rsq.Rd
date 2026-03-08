@@ -62,7 +62,7 @@ X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
 model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 explainer <- gazer(model)
-phi_rsq <- qshap_rsq(explainer, X, y)
+phi_rsq <- qshap(explainer, X, y)
 print(phi_rsq)
 
 }

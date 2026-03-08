@@ -179,7 +179,7 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
  #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
  #' explainer <- gazer(model)
- #' phi_rsq <- qshap_rsq(explainer, X, y)
+ #' phi_rsq <- qshap(explainer, X, y)
  #' print(phi_rsq)
  #'
  #' @keywords internal
@@ -454,6 +454,36 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
 
   class(result) <- c("qshap_result", "qshap_rsq", "list")
   return(result)
+}
+
+#' Alias for rsq
+#'
+#' This is a convenience alias for \code{rsq()} that provides a shorter
+#' function name for calculating feature-specific R-squared values.
+#'
+#' @inheritParams rsq
+#' @return A \code{qshap_result} object; see \code{\link{rsq}} for details.
+#'
+#' @examples
+#' library(xgboost)
+#' set.seed(42)
+#' n <- 100
+#' p <- 100
+#' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+#' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+#' explainer <- gazer(model)
+#' phi_rsq <- qshap(explainer, X, y)
+#' print(phi_rsq)
+#'
+#' @seealso \code{\link{rsq}}
+#' @export
+qshap <- function(explainer, x, y, feature_names = NULL, local = FALSE,
+                  nsample = NULL, sd_out = TRUE, ci_out = TRUE, level = 0.95,
+                  nfrac = NULL, random_state = 42, ncore = 1L) {
+  rsq(explainer, x, y, feature_names = feature_names, local = local,
+      nsample = nsample, sd_out = sd_out, ci_out = ci_out, level = level,
+      nfrac = nfrac, random_state = random_state, ncore = ncore)
 }
 
 #' Alias for qshap_loss

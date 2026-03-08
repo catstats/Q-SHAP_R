@@ -700,7 +700,7 @@ vis$density <- function(
 #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
 #' explainer <- gazer(model)
 #' phi_rsq <- rsq(explainer, X, y)
-#' plot_qshap(phi_rsq)
+#' plot(phi_rsq)
 #' }
 #'
 #' @keywords internal
