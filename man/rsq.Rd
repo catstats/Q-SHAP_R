@@ -2,25 +2,9 @@
 % Please edit documentation in R/tree_explainer.R
 \name{rsq}
 \alias{rsq}
-\alias{qshap}
 \title{Calculate Feature-Specific R-Squared Values}
 \usage{
 rsq(
-  explainer,
-  x,
-  y,
-  feature_names = NULL,
-  local = FALSE,
-  nsample = NULL,
-  sd_out = TRUE,
-  ci_out = TRUE,
-  level = 0.95,
-  nfrac = NULL,
-  random_state = 42,
-  ncore = 1L
-)
-
-qshap(
   explainer,
   x,
   y,
@@ -103,5 +87,5 @@ print(result)
 
 }
 \seealso{
-\code{\link{qshap_result}}, \code{\link{qshap}}
+\code{\link{qshap_result}}
 }

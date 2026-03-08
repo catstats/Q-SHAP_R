@@ -11,11 +11,11 @@
 
 \item{...}{Additional arguments (currently unused)}
 }
+\value{
+The input \code{object} is returned invisibly. Called primarily for
+  its side effect of printing a detailed summary of the
+  \code{qshap_tree_explainer} object to the console.
+}
 \description{
 Provides detailed summary information about the explainer
-}
-\value{
-The input \code{object} is returned invisibly. Called primarily for its
-side effect of printing a detailed summary of the
-\code{qshap_tree_explainer} object to the console.
 }

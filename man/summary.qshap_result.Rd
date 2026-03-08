@@ -11,11 +11,11 @@
 
 \item{...}{Additional arguments (currently unused)}
 }
+\value{
+The input \code{object} is returned invisibly. Called primarily for
+  its side effect of printing a detailed summary of the \code{qshap_result}
+  object to the console.
+}
 \description{
 Summary method for qshap_result
-}
-\value{
-The input \code{object} is returned invisibly. Called primarily for its
-side effect of printing a detailed summary of the \code{qshap_result}
-object to the console.
 }

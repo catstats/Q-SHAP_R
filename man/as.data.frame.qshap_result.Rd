@@ -15,10 +15,10 @@
 
 \item{...}{Additional arguments (currently unused)}
 }
-\description{
-Coercion method to data.frame for qshap_result
-}
 \value{
 A \code{data.frame} with columns \code{feature} (character) and
-\code{rsq} (numeric), sorted by \code{rsq} in decreasing order.
+  \code{rsq} (numeric), sorted by \code{rsq} in decreasing order.
+}
+\description{
+Coercion method to data.frame for qshap_result
 }
