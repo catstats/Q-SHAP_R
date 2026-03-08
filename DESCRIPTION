@@ -14,8 +14,8 @@ Description: Computes feature-specific R-squared (R2) contributions for
     'XGBoost' and 'LightGBM', and provides efficient parallel
     implementations suitable for large-scale problems. Multiple
     visualization tools are included for interpreting and communicating
-    feature contributions. The methodology is described in Jiang, Zhang
-    and Zhang (2025) <doi:10.5555/3762387.3762469>.
+    feature contributions. The methodology is described in Jiang, Zhang,
+    and Zhang (2025) <https://dl.acm.org/doi/10.5555/3762387.3762469>.
 License: GPL (>= 2)
 URL: https://github.com/catstats/Q-SHAP_R
 BugReports: https://github.com/catstats/Q-SHAP_R/issues
