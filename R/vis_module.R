@@ -690,18 +690,16 @@ vis$density <- function(
 #' @return The ggplot2 plot object (invisibly)
 #'
 #' @examples
-#' \donttest{
 #' library(xgboost)
 #' set.seed(42)
 #' n <- 100
 #' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
-#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+#' model <- xgboost(X, y, nrounds = 15L, max_depth = 2L, verbosity = 0L, nthreads = 1L)
 #' explainer <- gazer(model)
 #' phi_rsq <- rsq(explainer, X, y)
 #' plot(phi_rsq)
-#' }
 #'
 #' @keywords internal
 plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss"), ...) {
