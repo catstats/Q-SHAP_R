@@ -40,6 +40,6 @@
 #' phi_rsq <- rsq(explainer, X, y)
 #'
 #' @docType package
-#' @name qshap
+#' @name qshap-package
 #' @keywords internal
 "_PACKAGE"
