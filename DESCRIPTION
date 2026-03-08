@@ -3,13 +3,19 @@ Type: Package
 Title: Fast Calculation of Feature Contributions in Boosting Trees
 Version: 1.0
 Date: 2026-03-02
-Authors@R: c(person("Steven", "He", role = "aut", email = "hess1@uci.edu"), person("Zhongli", "Jiang", role = c("aut", "cre"), email = "zhongli.jiang.stats@gmail.com"), person("Dabao", "Zhang", role = "aut", email = "zdb969@hs.uci.edu"))
-Description: Computes feature-specific R-squared values using 'Shapley' decomposition
- of the total R-squared for boosting tree models in polynomial time.
- The package supports models fitted with 'XGBoost' and 'LightGBM', and
- provides efficient parallel implementations for large-scale problems.
- The methodology is described in Jiang, Zhang and Zhang (2025)
- <https://dl.acm.org/doi/10.5555/3762387.3762469>.
+Authors@R: c(
+    person("Steven", "He", role = "aut", email = "hess1@uci.edu"),
+    person("Zhongli", "Jiang", role = c("aut", "cre"),
+           email = "zhongli.jiang.stats@gmail.com"),
+    person("Dabao", "Zhang", role = "aut", email = "zdb969@hs.uci.edu"))
+Description: Computes feature-specific R-squared (R2) contributions for
+    boosting tree models using a Shapley-value-based decomposition of the
+    total R-squared in polynomial time. Supports models fitted with
+    'XGBoost' and 'LightGBM', and provides efficient parallel
+    implementations suitable for large-scale problems. Multiple
+    visualization tools are included for interpreting and communicating
+    feature contributions. The methodology is described in Jiang, Zhang
+    and Zhang (2025) <doi:10.5555/3762387.3762469>.
 License: GPL (>= 2)
 URL: https://github.com/catstats/Q-SHAP_R
 BugReports: https://github.com/catstats/Q-SHAP_R/issues
