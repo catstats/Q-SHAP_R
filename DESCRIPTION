@@ -15,7 +15,7 @@ Description: Computes feature-specific R-squared (R2) contributions for
     implementations suitable for large-scale problems. Multiple
     visualization tools are included for interpreting and communicating
     feature contributions. The methodology is described in Jiang, Zhang,
-    and Zhang (2025) <https://arxiv.org/abs/2407.03515>.
+    and Zhang (2025) <doi:10.48550/arXiv.2407.03515>.
 License: GPL (>= 2)
 URL: https://github.com/catstats/Q-SHAP_R
 BugReports: https://github.com/catstats/Q-SHAP_R/issues
