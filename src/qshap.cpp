@@ -1,20 +1,44 @@
 #include "qshap.h"
 #include <complex>
 #include <vector>
+#include <unordered_map>
 #include <cmath>
 #include <Eigen/Dense>
 
-#include <chrono>
-
-struct AccTimer
+// Compute a decision signature for a sample: for every internal node,
+// record whether x[feature] <= threshold. The weight matrix depends on
+// the sample's decision at ALL internal nodes (not just the path to the
+// sample's leaf), because traversal_weight() explores both branches and
+// uses x(split_feature) <= threshold to distribute weight at every node.
+// Two samples with identical signatures produce identical weight matrices.
+static std::vector<bool> compute_decision_signature(
+    const Eigen::VectorXd &x,
+    const TreeSummary &summary_tree)
 {
-    double &acc;
-    std::chrono::high_resolution_clock::time_point t0;
-    AccTimer(double &a) : acc(a), t0(std::chrono::high_resolution_clock::now()) {}
-    ~AccTimer()
+    const int nc = summary_tree.node_count;
+    std::vector<bool> sig(nc, false);
+    for (int v = 0; v < nc; v++)
     {
-        auto t1 = std::chrono::high_resolution_clock::now();
-        acc += std::chrono::duration<double>(t1 - t0).count();
+        if (summary_tree.children_left(v) >= 0) // internal node
+        {
+            sig[v] = (x(summary_tree.feature(v)) <= summary_tree.threshold(v));
+        }
+    }
+    return sig;
+}
+
+// Hash for vector<bool> to use as unordered_map key
+struct VecBoolHash
+{
+    size_t operator()(const std::vector<bool> &v) const
+    {
+        size_t seed = v.size();
+        for (size_t i = 0; i < v.size(); i++)
+        {
+            if (v[i])
+                seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+        return seed;
     }
 };
 
@@ -37,12 +61,35 @@ Eigen::MatrixXd T2(
     }
     Eigen::Map<Eigen::VectorXd> init_prediction(init_prediction_vec.data(), init_prediction_vec.size());
 
-    Eigen::MatrixXd shap_value = Eigen::MatrixXd::Zero(x.rows(), x.cols());
+    const int n = x.rows();
+    const int p = x.cols();
+    Eigen::MatrixXd shap_value = Eigen::MatrixXd::Zero(n, p);
 
-    for (int i = 0; i < x.rows(); i++)
+    // Group samples by decision signature: for every internal node,
+    // record whether x[feature] <= threshold. Two samples with identical
+    // signatures produce identical weight matrices, so T2_sample gives
+    // identical results. We compute weight + T2_sample once per unique
+    // group, then broadcast. Complexity reduces from O(n * L^2 * D^2)
+    // to O(G * L^2 * D^2) where G = number of unique groups (<= min(n, 2^K)).
+    std::unordered_map<std::vector<bool>, std::vector<int>, VecBoolHash> groups;
+    groups.reserve(n);
+    for (int i = 0; i < n; i++)
     {
-        const auto w = weight(x.row(i), summary_tree);
-        T2_sample(i, w.first, w.second, init_prediction, store_v_invc, store_z, shap_value, summary_tree.feature_uniq);
+        auto sig = compute_decision_signature(x.row(i), summary_tree);
+        groups[std::move(sig)].push_back(i);
+    }
+
+    for (const auto &group : groups)
+    {
+        int representative = group.second[0];
+        const auto w = weight(x.row(representative), summary_tree);
+        T2_sample(representative, w.first, w.second, init_prediction,
+                  store_v_invc, store_z, shap_value, summary_tree.feature_uniq);
+
+        for (size_t k = 1; k < group.second.size(); k++)
+        {
+            shap_value.row(group.second[k]) = shap_value.row(representative);
+        }
     }
 
     return shap_value;
