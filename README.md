@@ -1,8 +1,11 @@
 # qshap: Feature-Specific $R^2$ Values for Boosting Trees in R
 
 [![CRAN status](https://www.r-pkg.org/badges/version/qshap)](https://CRAN.R-project.org/package=qshap)
-[![](http://cranlogs.r-pkg.org/badges/grand-total/qshap?color=blue)](https://cran.r-project.org/package=qshap)
+[![Downloads per month](https://cranlogs.r-pkg.org/badges/qshap)](https://cran.r-project.org/package=qshap)
+[![Total downloads](https://cranlogs.r-pkg.org/badges/grand-total/qshap?color=blue)](https://cran.r-project.org/package=qshap)
 [![R-hub](https://github.com/catstats/Q-SHAP_R/actions/workflows/rhub.yaml/badge.svg)](https://github.com/catstats/Q-SHAP_R/actions/workflows/rhub.yaml)
+[![License: GPL v2+](https://img.shields.io/badge/License-GPL%20v2+-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
+[![DOI](https://img.shields.io/badge/DOI-10.48550%2FarXiv.2407.03515-B31B1B.svg)](https://doi.org/10.48550/arXiv.2407.03515)
 
 This R package computes feature-specific $R^2$ values using Shapley decomposition of the total $R^2$ for Boosting Trees in polynomial time based on the [paper](https://dl.acm.org/doi/10.5555/3762387.3762469)
 
