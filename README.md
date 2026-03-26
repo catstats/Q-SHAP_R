@@ -9,7 +9,7 @@
 
 This R package computes feature-specific $R^2$ values using Shapley decomposition of the total $R^2$ for Boosting Trees in polynomial time based on the [paper](https://dl.acm.org/doi/10.5555/3762387.3762469)
 
-Currently supports **XGBoost** and **LightGBM** models.
+Currently supports **XGBoost**, **LightGBM**, and **CatBoost** models.
 
 ## Key Features
 
@@ -157,6 +157,64 @@ plot(
 )
 ```
 
+## Example with CatBoost
+
+```r
+# Load required libraries
+library(catboost)
+library(qshap)
+
+# Generate synthetic data
+set.seed(42)
+n <- 500
+p <- 10
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+colnames(X) <- paste0("Feature_", 1:p)
+
+# True model: y depends mainly on first 3 features
+y <- 3 * X[,1] + 2 * X[,2] - 1.5 * X[,3] + rnorm(n, 0, 0.5)
+
+# Create CatBoost dataset and train model
+pool <- catboost.load_pool(data = X, label = y)
+
+params <- list(
+  loss_function = "RMSE",
+  iterations = 50,
+  depth = 4,
+  learning_rate = 0.1,
+  verbose = 0
+)
+
+model <- catboost.train(pool, params = params)
+
+# Create Q-SHAP explainer
+explainer <- gazer(model)
+
+# Calculate feature-specific R^2 values
+result <- rsq(explainer, X, y)
+
+# Print results
+print(result)
+
+# Calculate model R^2 for verification
+ypred <- catboost.predict(model, pool)
+sst <- sum((y - mean(y))^2)
+sse <- sum((y - ypred)^2)
+model_rsq <- 1 - sse/sst
+
+print(paste("Total R²:", round(sum(result$rsq), 4)))
+print(paste("Model R²:", round(model_rsq, 4)))
+
+# Visualize
+plot(
+  result,
+  label = colnames(X),
+  rotation = 45,
+  color_map_name = "Oranges",
+  title = "Feature-Specific R² (CatBoost)"
+)
+```
+
 ## Advanced Usage
 
 ### Parallel Processing
@@ -210,7 +268,7 @@ plot(rsq.result, type = "gcorr", label = feature_names, rotation=45)
 
 ### Main Functions
 
-- `gazer(model)`: Create a Q-SHAP explainer from a trained model
+- `gazer(model)`: Create a Q-SHAP explainer from a trained model (XGBoost, LightGBM, or CatBoost)
   - Returns a `qshap_tree_explainer` object with `print()` and `summary()` methods
 - `rsq(explainer, X, y, ...)`: Calculate feature-specific R² values
   - Returns a `qshap_result` object with enhanced formatting and methods
