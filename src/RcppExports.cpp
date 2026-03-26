@@ -11,6 +11,23 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// compute_treeshap
+Eigen::MatrixXd compute_treeshap(const Eigen::MatrixXd& x, const Eigen::VectorXi& children_left, const Eigen::VectorXi& children_right, const Eigen::VectorXi& feature, const Eigen::VectorXd& threshold, const Eigen::VectorXd& value, const Eigen::VectorXd& n_node_samples);
+RcppExport SEXP _qshap_compute_treeshap(SEXP xSEXP, SEXP children_leftSEXP, SEXP children_rightSEXP, SEXP featureSEXP, SEXP thresholdSEXP, SEXP valueSEXP, SEXP n_node_samplesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type children_left(children_leftSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type children_right(children_rightSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXi& >::type feature(featureSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type threshold(thresholdSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type value(valueSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type n_node_samples(n_node_samplesSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_treeshap(x, children_left, children_right, feature, threshold, value, n_node_samples));
+    return rcpp_result_gen;
+END_RCPP
+}
 // T2
 Eigen::MatrixXd T2(const Eigen::MatrixXd& x, const Rcpp::List& tree_summary, const Eigen::MatrixXcd& store_v_invc, const Eigen::MatrixXcd& store_z, bool parallel);
 RcppExport SEXP _qshap_T2(SEXP xSEXP, SEXP tree_summarySEXP, SEXP store_v_invcSEXP, SEXP store_zSEXP, SEXP parallelSEXP) {
@@ -67,6 +84,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_qshap_compute_treeshap", (DL_FUNC) &_qshap_compute_treeshap, 7},
     {"_qshap_T2", (DL_FUNC) &_qshap_T2, 5},
     {"_qshap_loss_treeshap", (DL_FUNC) &_qshap_loss_treeshap, 7},
     {"_qshap_store_complex_v_invc", (DL_FUNC) &_qshap_store_complex_v_invc, 1},

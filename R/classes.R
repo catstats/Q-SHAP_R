@@ -292,6 +292,8 @@ new_qshap_tree_explainer <- function(model,
     class(obj) <- c("qshap_tree_explainer", "xgboost_explainer")
   } else if (model_type == "lightgbm") {
     class(obj) <- c("qshap_tree_explainer", "lightgbm_explainer")
+  } else if (model_type == "catboost") {
+    class(obj) <- c("qshap_tree_explainer", "catboost_explainer")
   } else {
     class(obj) <- "qshap_tree_explainer"
   }
@@ -317,13 +319,13 @@ validate_qshap_tree_explainer <- function(x) {
   }
   
   # Validate model_type
-  if (!x$model_type %in% c("xgboost", "lightgbm")) {
-    stop("model_type must be 'xgboost' or 'lightgbm'", call. = FALSE)
+  if (!x$model_type %in% c("xgboost", "lightgbm", "catboost")) {
+    stop("model_type must be 'xgboost', 'lightgbm', or 'catboost'", call. = FALSE)
   }
   
-  # Check base_score for XGBoost
-  if (x$model_type == "xgboost" && is.null(x$base_score)) {
-    stop("base_score is required for XGBoost models", call. = FALSE)
+  # Check base_score for XGBoost and CatBoost
+  if (x$model_type %in% c("xgboost", "catboost") && is.null(x$base_score)) {
+    stop("base_score is required for XGBoost and CatBoost models", call. = FALSE)
   }
   
   # Check trees is a list
