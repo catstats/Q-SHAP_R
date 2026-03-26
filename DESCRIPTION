@@ -11,7 +11,7 @@ Authors@R: c(
 Description: Computes feature-specific R-squared (R2) contributions for
     boosting tree models using a Shapley-value-based decomposition of the
     total R-squared in polynomial time. Supports models fitted with
-    'XGBoost' and 'LightGBM', and provides efficient parallel
+    'XGBoost', 'LightGBM', and 'CatBoost', and provides efficient parallel
     implementations suitable for large-scale problems. Multiple
     visualization tools are included for interpreting and communicating
     feature contributions. The methodology is described in Jiang, Zhang,
@@ -28,7 +28,8 @@ Imports: Rcpp (>= 1.0.14),
  jsonlite,
  methods,
  progress
-Suggests: shiny
+Suggests: shiny,
+ catboost
 LinkingTo: Rcpp,
  RcppEigen
 RoxygenNote: 7.3.2
