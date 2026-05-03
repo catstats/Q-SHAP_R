@@ -14,21 +14,26 @@ Currently supports **XGBoost**, **LightGBM**, and **CatBoost** models.
 ## Key Features
 
 - **Fast computation**: Polynomial time complexity for Shapley value calculation
-- **Multiple models**: Support for XGBoost and LightGBM
+- **Multiple models**: Support for XGBoost, LightGBM, and CatBoost
 - **Parallel processing**: Built-in support for multi-core processing
 - **Rich visualizations**: Multiple plot types for interpreting results
 - **Memory efficient**: Options for sampling large datasets
 
 ## Installation
 
-You can install `qshap` from GitHub:
+You can install the released version of `qshap` from CRAN:
 
 ```r
-# Install devtools if you haven't already
-install.packages("devtools")
+install.packages("qshap")
+```
 
-# Install qshap from GitHub
-devtools::install_github("catstats/Q-SHAP_R")
+You can also install the development version from GitHub:
+
+```r
+# Install remotes if you haven't already
+install.packages("remotes")
+
+remotes::install_github("catstats/Q-SHAP_R")
 ```
 
 ## Quick Start with XGBoost
