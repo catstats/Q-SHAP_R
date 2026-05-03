@@ -1,53 +1,105 @@
 #' @importFrom stats predict
 NULL
 
+# Find the leaf index for each sample in a CatBoost oblivious tree.
+# Vectorized: all nodes at depth d share the same feature/threshold,
+# so we compute decisions for all n samples at each depth simultaneously.
+# Returns 0-based leaf index within [0, 2^k - 1].
+#' @keywords internal
+find_leaf_indices_oblivious <- function(x, tree) {
+  k <- tree$max_depth
+  if (k == 0L) return(rep(0L, nrow(x)))
+
+  # For oblivious tree in BFS order, nodes at depth d start at index 2^d - 1.
+  # All nodes at depth d use the same feature and threshold (the first node at that depth).
+  leaf_idx <- rep(0L, nrow(x))
+  for (d in 0:(k - 1L)) {
+    node_at_depth <- 2^d - 1L  # 0-based BFS index of first node at depth d
+    f <- tree$feature[node_at_depth + 1L] + 1L  # R 1-based column
+    thr <- tree$threshold[node_at_depth + 1L]
+    # If x <= threshold: go left (bit = 0), else go right (bit = 1)
+    goes_right <- as.integer(x[, f] > thr)
+    leaf_idx <- leaf_idx * 2L + goes_right
+  }
+  leaf_idx
+}
+
+
 # Loss implementation for CatBoost model
+# Optimized: for oblivious trees, samples in the same leaf produce identical
+# TreeSHAP values and identical T2 results (same decision signature).
+# We compute once per unique leaf and broadcast to all samples in that leaf.
 #' @keywords internal
 qshap_loss_catboost <- function(explainer, x, y, y_mean_ori = NULL) {
-  if (!requireNamespace("catboost", quietly = TRUE)) {
-    stop("catboost package is required for CatBoost support. ",
-         "Install from: https://catboost.ai/docs/en/concepts/r-installation")
-  }
-
-  model <- explainer$model
   store_v_invc <- explainer$store_v_invc
   store_z <- explainer$store_z
   cb_trees <- explainer$trees
   bias <- explainer$base_score  # CatBoost bias extracted in gazer
+  tree_summaries <- explainer$tree_summaries
+  if (is.null(tree_summaries)) {
+    tree_summaries <- lapply(cb_trees, summarize_tree)
+  }
 
   num_tree <- length(cb_trees)
-  loss <- matrix(0, nrow = nrow(x), ncol = ncol(x))
+  n <- nrow(x)
+  p <- ncol(x)
+  loss <- matrix(0, nrow = n, ncol = p)
 
   if (!is.matrix(x)) {
     x <- as.matrix(x)
   }
 
-  # Create CatBoost pool for predictions
-  pool <- catboost::catboost.load_pool(data = x)
-
-  pb <- progress::progress_bar$new(
+  pb <- if (interactive()) progress::progress_bar$new(
     format = "Progress [:bar] :current/:total (:percent)",
     total = num_tree,
     clear = FALSE,
     width = 60
-  )
+  ) else NULL
+
+  # Track cumulative prediction incrementally using tree leaf values
+  # (avoids calling catboost.predict entirely)
+  cum_pred <- rep(bias, n)
 
   for (i in seq_len(num_tree)) {
-    pb$tick()
+    if (!is.null(pb)) pb$tick()
 
-    # Compute residual before tree i
-    if (i == 1) {
-      local_res <- y - bias
-    } else {
-      pred_partial <- catboost::catboost.predict(model, pool, ntree_end = i - 1)
-      local_res <- y - pred_partial
+    # Residual before tree i
+    local_res <- y - cum_pred
+
+    tree_i <- cb_trees[[i]]
+    summary_tree <- tree_summaries[[i]]
+
+    # --- Leaf-based grouping optimization for oblivious trees ---
+    # For oblivious trees, all nodes at the same depth use the same
+    # feature and threshold. Therefore, two samples in the same leaf
+    # have identical decisions at EVERY internal node, producing
+    # identical TreeSHAP values and identical T2 weight matrices.
+    # We only need to compute TreeSHAP and loss_treeshap once per
+    # unique leaf (at most 2^depth groups), then broadcast.
+
+    leaf_ids <- find_leaf_indices_oblivious(x, tree_i)
+
+    # Use match() for fast grouping: maps each sample to its group index
+    unique_leaves <- unique(leaf_ids)
+    n_groups <- length(unique_leaves)
+    leaf_to_group <- match(leaf_ids, unique_leaves)  # 1-based group index
+
+    # One representative per group (first occurrence)
+    rep_indices <- integer(n_groups)
+    seen <- logical(n_groups)
+    for (idx in seq_len(n)) {
+      g <- leaf_to_group[idx]
+      if (!seen[g]) {
+        rep_indices[g] <- idx
+        seen[g] <- TRUE
+      }
     }
 
-    # Compute per-tree SHAP via our C++ TreeSHAP (since CatBoost R
-    # doesn't expose per-tree SHAP values)
-    tree_i <- cb_trees[[i]]
-    T0_x_tree <- compute_treeshap(
-      x,
+    x_reps <- x[rep_indices, , drop = FALSE]
+
+    # Compute TreeSHAP only for representatives (2^k instead of n)
+    T0_reps <- compute_treeshap(
+      x_reps,
       tree_i$children_left,
       tree_i$children_right,
       tree_i$feature,
@@ -56,17 +108,28 @@ qshap_loss_catboost <- function(explainer, x, y, y_mean_ori = NULL) {
       tree_i$n_node_samples
     )
 
-    summary_tree <- summarize_tree(tree_i)
+    # Compute T2 only for representatives (2^k instead of n)
+    T2_reps <- T2(x_reps, summary_tree, store_v_invc, store_z, FALSE)
 
-    current_tree_loss <- loss_treeshap(
-      x, local_res, summary_tree, store_v_invc, store_z, T0_x_tree, 1.0
-    )
+    # Broadcast T0 and T2 to all n samples via leaf group mapping
+    T0_all <- T0_reps[leaf_to_group, , drop = FALSE]
+    T2_all <- T2_reps[leaf_to_group, , drop = FALSE]
+
+    # Compute loss: loss = T2 - 2 * T0 * residual (vectorized, O(n*p))
+    current_tree_loss <- T2_all - 2.0 * T0_all * local_res
 
     if (i == 1) {
       loss <- current_tree_loss
     } else {
       loss <- loss + current_tree_loss
     }
+
+    # Update cumulative prediction using tree's leaf values
+    # leaf_ids are 0-based leaf indices; BFS index = num_internal + leaf_id
+    num_internal <- 2^(tree_i$max_depth) - 1L
+    # tree_i$value is 0-based indexed, leaf value at BFS position (num_internal + leaf_id)
+    tree_preds <- tree_i$value[num_internal + leaf_ids + 1L]
+    cum_pred <- cum_pred + tree_preds
   }
 
   loss

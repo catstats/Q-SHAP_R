@@ -14,50 +14,32 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
   store_v_invc <- explainer$store_v_invc
   store_z <- explainer$store_z
   lgb_trees <- explainer$trees
+  tree_summaries <- explainer$tree_summaries
+  if (is.null(tree_summaries)) {
+    tree_summaries <- lapply(lgb_trees, summarize_tree)
+  }
   
   num_tree <- length(lgb_trees)
-  loss <- matrix(0, nrow = nrow(x), ncol = ncol(x))
   
   if (!is.matrix(x)) {
     x <- as.matrix(x)
   }
+  n <- nrow(x)
+  p <- ncol(x)
+  loss <- matrix(0, nrow = n, ncol = p)
+  cum_pred <- numeric(n)
 
-    pb <- progress::progress_bar$new(
+    pb <- if (interactive()) progress::progress_bar$new(
       format = "Progress [:bar] :current/:total (:percent)",
       total = num_tree,
       clear = FALSE,
       width = 60
-    )
+    ) else NULL
 
   for (i in seq_len(num_tree)) {
 
-    pb$tick()
-    local_res <- NULL 
-    
-    if (i == 1) {
-      # For the first tree - use raw y values (no base score like XGBoost)
-      local_res <- y
-    } else {
-      # Calculate residual: y - prediction_from_iterations_1_to_(i-1)
-      # Use tryCatch to handle potential LightGBM prediction issues with complex trees
-      tryCatch({
-        pred_partial <- stats::predict(model, x, num_iteration = i - 1)
-        local_res <- y - pred_partial
-      }, error = function(e) {
-        # Fallback: use a safer approach for complex trees
-        # Calculate cumulative predictions manually using SHAP contributions
-        if (i == 2) {
-          # For second tree, use first tree SHAP values
-          shap_i_minus_1 <- stats::predict(model, x, type = "contrib", num_iteration = 1)
-          pred_partial <- rowSums(shap_i_minus_1)  # Sum includes bias
-          local_res <- y - pred_partial
-        } else {
-          # For subsequent trees, fall back to using y (less accurate but won't crash)
-          warning(paste("LightGBM predict failed for iteration", i-1, "- using fallback approach"))
-          local_res <- y
-        }
-      })
-    }
+    if (!is.null(pb)) pb$tick()
+    local_res <- y - cum_pred
     
     # Calculate real SHAP values using LightGBM's built-in SHAP functionality
     # This is equivalent to XGBoost's predcontrib=TRUE and Python's explainer.shap_values(x)
@@ -65,6 +47,7 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
       if (i == 1) {
         # For the first tree, get SHAP values from just the first iteration
         shap_contrib_matrix <- stats::predict(model, x, type = "contrib", num_iteration = 1)
+        tree_pred <- rowSums(shap_contrib_matrix)
         # Remove the bias column (last column) to get just feature contributions
         T0_x_tree <- shap_contrib_matrix[, -ncol(shap_contrib_matrix), drop = FALSE]
       } else {
@@ -75,6 +58,7 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
             num_iteration   = 1
           )
 
+        tree_pred <- rowSums(shap_i)
         # remove bias column
         T0_x_tree <- shap_i[, -ncol(shap_i), drop = FALSE]
   
@@ -83,11 +67,11 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
       # Fallback: use full model SHAP divided by number of trees
       warning(paste("LightGBM SHAP calculation failed for iteration", i, "- using fallback approach"))
       full_shap <- stats::predict(model, x, type = "contrib")
+      tree_pred <- rowSums(full_shap) / num_tree
       T0_x_tree <- full_shap[, -ncol(full_shap), drop = FALSE] / num_tree
     })
     
-    # lgb_trees is a 1-indexed list in R. lgb_trees[[i]] is the tree for iteration i.
-    summary_tree <- summarize_tree(lgb_trees[[i]])
+    summary_tree <- tree_summaries[[i]]
     
     # Call C++ loss_treeshap with real SHAP values and correct residuals
     current_tree_loss <- loss_treeshap(x, local_res, summary_tree, store_v_invc, store_z, T0_x_tree, 1.0)
@@ -97,6 +81,8 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
     } else {
       loss <- loss + current_tree_loss
     }
+
+    cum_pred <- cum_pred + tree_pred
   }
   
   loss

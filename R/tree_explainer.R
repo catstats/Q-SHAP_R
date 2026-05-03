@@ -33,6 +33,11 @@ gazer <- function(model, max_depth = NULL, base_score = NULL, ...) {
   UseMethod("gazer")
 }
 
+cache_tree_summaries <- function(explainer) {
+  explainer$tree_summaries <- lapply(explainer$trees, summarize_tree)
+  explainer
+}
+
 #' @export
 gazer.xgb.Booster <- function(model, ...) {
 
@@ -83,6 +88,8 @@ gazer.xgb.Booster <- function(model, ...) {
     store_v_invc = store_complex_v_invc(max_depth * 2),
     store_z = store_complex_root(max_depth * 2)
   )
+
+  explainer <- cache_tree_summaries(explainer)
   
   validate_qshap_tree_explainer(explainer)
   explainer
@@ -105,6 +112,8 @@ gazer.lgb.Booster <- function(model, max_depth = NULL, ...) {
     store_v_invc = store_complex_v_invc(max_depth * 2),
     store_z = store_complex_root(max_depth * 2)
   )
+
+  explainer <- cache_tree_summaries(explainer)
   
   validate_qshap_tree_explainer(explainer)
   explainer
@@ -132,6 +141,8 @@ gazer.catboost.Model <- function(model, max_depth = NULL, ...) {
     store_v_invc = store_complex_v_invc(max_depth * 2),
     store_z = store_complex_root(max_depth * 2)
   )
+
+  explainer <- cache_tree_summaries(explainer)
 
   validate_qshap_tree_explainer(explainer)
   explainer
@@ -269,10 +280,14 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
     rsq <- -colSums(loss) / sst
 
      if (sd_out) {
-      # sample variance across i for each feature j
       loss_mean <- colMeans(loss)
-      loss_var  <- colSums((loss - matrix(loss_mean, n, ncol(loss), byrow = TRUE))^2) / (n - 1)
-      sd_rsq    <- sqrt(n * loss_var) / sst
+      if (n > 1L) {
+        loss_sumsq <- colSums(loss * loss)
+        loss_var <- pmax((loss_sumsq - n * loss_mean^2) / (n - 1), 0)
+        sd_rsq <- sqrt(n * loss_var) / sst
+      } else {
+        sd_rsq <- rep(NA_real_, ncol(loss))
+      }
     } else {
       sd_rsq <- NULL
     }
@@ -341,8 +356,13 @@ if (local) {
 
   if (sd_out) {
       loss_mean <- colMeans(loss)
-      loss_var  <- colSums((loss - matrix(loss_mean, n_all, ncol(loss), byrow = TRUE))^2) / (n_all - 1)
-      sd_rsq    <- sqrt(n_all * loss_var) / sst
+      if (n_all > 1L) {
+        loss_sumsq <- colSums(loss * loss)
+        loss_var <- pmax((loss_sumsq - n_all * loss_mean^2) / (n_all - 1), 0)
+        sd_rsq <- sqrt(n_all * loss_var) / sst
+      } else {
+        sd_rsq <- rep(NA_real_, ncol(loss))
+      }
     } else {
       sd_rsq <- NULL
     }
@@ -363,17 +383,19 @@ if (local) {
 } else {
   # Combine sufficient statistics
   sum_all <- Reduce(`+`, lapply(results, `[[`, "sum"))
-  sumsq_all <- Reduce(`+`, lapply(results, `[[`, "sumsq"))
   n_all <- sum(vapply(results, `[[`, numeric(1), "n"))
 
   # point estimate
   rsq <- -sum_all / sst
 
   if (sd_out) {
-      sumsq_all <- Reduce(`+`, lapply(results, `[[`, "sumsq"))
-      # unbiased sample variance across i
-      loss_var <- (sumsq_all - (sum_all^2) / n_all) / (n_all - 1)
-      sd_rsq   <- sqrt(n_all * loss_var) / sst
+      if (n_all > 1L) {
+        sumsq_all <- Reduce(`+`, lapply(results, `[[`, "sumsq"))
+        loss_var <- pmax((sumsq_all - (sum_all^2) / n_all) / (n_all - 1), 0)
+        sd_rsq <- sqrt(n_all * loss_var) / sst
+      } else {
+        sd_rsq <- rep(NA_real_, length(sum_all))
+      }
     } else {
       sd_rsq <- NULL
     }

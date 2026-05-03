@@ -11,19 +11,27 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
   store_z <- explainer$store_z
   base_score <- explainer$base_score
   xgb_trees <- explainer$trees # This is a list of simple_tree objects
+  tree_summaries <- explainer$tree_summaries
+  if (is.null(tree_summaries)) {
+    tree_summaries <- lapply(xgb_trees, summarize_tree)
+  }
   
   num_tree <- length(xgb_trees)
-  loss <- matrix(0, nrow = nrow(x), ncol = ncol(x))
   
   if (!is.matrix(x)) {
     x <- as.matrix(x)
   }
-    pb <- progress::progress_bar$new(
+  n <- nrow(x)
+  p <- ncol(x)
+  loss <- matrix(0, nrow = n, ncol = p)
+  pb <- if (interactive()) progress::progress_bar$new(
       format = "Progress [:bar] :current/:total (:percent)",
       total = num_tree,
       clear = FALSE,
       width = 60
-    )
+    ) else NULL
+
+  cum_pred <- rep(base_score, n)
   # XGBoost R uses 0-based indexing for iterationrange with exclusive end
   # c(0, 1) = tree 0 only, c(0, 2) = trees 0+1, etc.
   # Note: c(0, n) and c(1, n) are equivalent (both give trees 0 to n-1)
@@ -34,36 +42,14 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
 
   for (i in seq_len(num_tree)) { # i is the 1-based loop index; tree index is i-1 (0-based)
   
-    pb$tick()
+    if (!is.null(pb)) pb$tick()
 
-    local_res <- NULL 
+    local_res <- y - cum_pred
 
-    if (i == 1) { # For the first tree (tree 0 in 0-based indexing)
-      # Residual before first tree: y - base_score
-      local_res <- y - base_score
-      
-      # SHAP values for tree 0 only
-      # iterationrange = c(0, 1) means tree 0 only (0-based, exclusive end)
-      shap_tree_i <- stats::predict(model[i], x, predcontrib = TRUE)
-      T0_x_tree <- shap_tree_i[, -ncol(shap_tree_i), drop = FALSE]
-    } else { # For subsequent trees (tree i-1 in 0-based indexing)
-      # Calculate residual: y - prediction_from_trees_0_to_(i-2)
-      # For tree i-1, we need prediction from trees 0 to i-2 (i.e., before tree i-1)
-      # iterationrange = c(0, i-1) gives trees 0 to i-2
-      #  but we can directly do slicing !!
-      pred_partial <- stats::predict(model[1:(i-1)], x)
-      local_res <- y - pred_partial
-      
-      # SHAP values for current tree
-      shap_i <- stats::predict(model[i], x, predcontrib = TRUE)
-      
-      # Marginal SHAP contribution of tree i-1 (remove bias columns)
-      T0_x_tree <- shap_i[, -ncol(shap_i), drop = FALSE]
-    }
-
-    
-    # xgb_trees is a 1-indexed list in R. xgb_trees[[i]] is the tree for round i.
-    summary_tree <- summarize_tree(xgb_trees[[i]])
+    shap_tree_i <- stats::predict(model[i], x, predcontrib = TRUE)
+    tree_pred <- rowSums(shap_tree_i) - base_score
+    T0_x_tree <- shap_tree_i[, -ncol(shap_tree_i), drop = FALSE]
+    summary_tree <- tree_summaries[[i]]
     
     # Call C++ loss_treeshap with per-tree SHAP values (T0_x_tree) and correct residuals (local_res)
     # The learning rate for individual XGBoost trees in this SHAP context is effectively 1.0,
@@ -75,6 +61,8 @@ qshap_loss_xgboost <- function(explainer, x, y, y_mean_ori = NULL) {
     } else {
       loss <- loss + current_tree_loss
     }
+
+    cum_pred <- cum_pred + tree_pred
   }
   
   loss
