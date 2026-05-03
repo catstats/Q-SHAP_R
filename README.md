@@ -163,6 +163,25 @@ plot(
 
 ## Example with CatBoost
 
+CatBoost support in `qshap` is an optional runtime backend. It uses the official
+R `catboost` package directly; it does not call the Python package. Because
+`catboost` for R is not distributed on CRAN, install it from the official
+CatBoost R instructions before running the example:
+
+```r
+install.packages("remotes")
+
+# Choose the OS-specific binary URL from:
+# https://catboost.ai/docs/en/concepts/r-installation
+remotes::install_url(
+  "BINARY_URL",
+  INSTALL_opts = c("--no-multiarch", "--no-test-load")
+)
+```
+
+After installation, train a `catboost.Model` in R, pass it to `gazer()`, and
+compute feature-specific R-squared values with `rsq()`:
+
 ```r
 # Load required libraries
 library(catboost)
@@ -188,7 +207,8 @@ params <- list(
 
 model <- catboost.train(pool, params = params)
 
-# Create Q-SHAP explainer
+# Create Q-SHAP explainer. qshap dispatches to gazer.catboost.Model(),
+# exports the fitted CatBoost model to JSON, and parses the tree structure.
 explainer <- gazer(model)
 
 # Calculate feature-specific R^2 values

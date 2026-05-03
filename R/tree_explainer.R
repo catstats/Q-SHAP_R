@@ -8,7 +8,8 @@ NULL
 #' Create a QSHAP Tree Explainer
 #' 
 #' Creates an explainer object for computing feature-specific Shapley values
-#' from a trained tree ensemble model. Supports XGBoost and LightGBM models.
+#' from a trained tree ensemble model. Supports XGBoost, LightGBM, and
+#' CatBoost models.
 #' 
 #' @param model A model object of class \code{xgboost} or \code{xgb.Booster} from \pkg{xgboost}, class \code{lgb.Booster} from \pkg{lightgbm}, or class \code{catboost.Model} from \pkg{catboost}
 #' @param max_depth Maximum depth of trees, extracted from \code{model} by default.

@@ -21,7 +21,8 @@ A class of \code{qshap_tree_explainer} object containing the model information a
 }
 \description{
 Creates an explainer object for computing feature-specific Shapley values
-from a trained tree ensemble model. Supports XGBoost and LightGBM models.
+from a trained tree ensemble model. Supports XGBoost, LightGBM, and
+CatBoost models.
 }
 \examples{
 library(xgboost)

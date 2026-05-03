@@ -242,18 +242,26 @@ catboost_oblivious_to_simple <- function(tree_json, scale = 1.0) {
 # Formats a CatBoost model into a list of simple_tree objects
 #' @keywords internal
 catboost_formatter <- function(model, max_depth = NULL) {
-  if (!requireNamespace("catboost", quietly = TRUE)) {
-    stop("catboost package is required for CatBoost support. ",
-         "Install from: https://catboost.ai/docs/en/concepts/r-installation")
+  catboost_save_model <- tryCatch(
+    getExportedValue("catboost", "catboost.save_model"),
+    error = function(e) NULL
+  )
+  if (is.null(catboost_save_model)) {
+    stop("The optional catboost package is required for CatBoost support. ",
+         "It is not distributed on CRAN; install it from the official ",
+         "CatBoost R instructions: ",
+         "https://catboost.ai/docs/en/concepts/r-installation",
+         call. = FALSE)
   }
   if (!requireNamespace("jsonlite", quietly = TRUE)) {
     stop("jsonlite package is required for CatBoost tree parsing")
   }
 
-  # Export model to JSON for tree extraction
+  # Export model to JSON for tree extraction while keeping CatBoost a
+  # runtime-only optional backend.
   tmp <- tempfile(fileext = ".json")
   on.exit(unlink(tmp), add = TRUE)
-  catboost::catboost.save_model(model, tmp, file_format = "json")
+  catboost_save_model(model, tmp, file_format = "json")
   model_json <- jsonlite::fromJSON(tmp, simplifyVector = FALSE)
 
   # Extract scale and bias

@@ -16,7 +16,10 @@ Description: Computes feature-specific R-squared (R2) contributions for
     problems. Multiple
     visualization tools are included for interpreting and communicating
     feature contributions. The methodology is described in Jiang, Zhang,
-    and Zhang (2025) <doi:10.48550/arXiv.2407.03515>.
+    and Zhang (2025) <doi:10.48550/arXiv.2407.03515>. Optional 'CatBoost'
+    support uses the R package 'catboost', which is not distributed on CRAN;
+    installation instructions and released binaries are provided by the
+    CatBoost project at <https://catboost.ai/docs/en/concepts/r-installation>.
 License: GPL (>= 2)
 URL: https://github.com/catstats/Q-SHAP_R
 BugReports: https://github.com/catstats/Q-SHAP_R/issues
@@ -29,8 +32,7 @@ Imports: Rcpp (>= 1.0.14),
  jsonlite,
  methods,
  progress
-Suggests: shiny,
- catboost
+Suggests: shiny
 LinkingTo: Rcpp,
  RcppEigen
 RoxygenNote: 7.3.2
