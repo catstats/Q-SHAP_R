@@ -177,6 +177,16 @@ remotes::install_url(
   "BINARY_URL",
   INSTALL_opts = c("--no-multiarch", "--no-test-load")
 )
+
+e.g.
+remotes::install_url(
+
+  "https://github.com/catboost/catboost/releases/download/v1.2.10/catboost-R-darwin-universal2-1.2.10.tgz",
+
+  INSTALL_opts = c("--no-multiarch", "--no-test-load")
+
+)
+
 ```
 
 After installation, train a `catboost.Model` in R, pass it to `gazer()`, and
