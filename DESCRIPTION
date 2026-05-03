@@ -1,8 +1,8 @@
 Package: qshap
 Type: Package
 Title: Fast Calculation of Feature Contributions in Boosting Trees
-Version: 1.0
-Date: 2026-03-02
+Version: 1.0.1
+Date: 2026-05-03
 Authors@R: c(
     person("Steven", "He", role = "aut", email = "hess1@uci.edu"),
     person("Zhongli", "Jiang", role = c("aut", "cre"),
@@ -11,8 +11,9 @@ Authors@R: c(
 Description: Computes feature-specific R-squared (R2) contributions for
     boosting tree models using a Shapley-value-based decomposition of the
     total R-squared in polynomial time. Supports models fitted with
-    'XGBoost', 'LightGBM', and 'CatBoost', and provides efficient parallel
-    implementations suitable for large-scale problems. Multiple
+    'XGBoost', 'LightGBM', and 'CatBoost', with optimized backend-specific
+    implementations and cached tree summaries suitable for large-scale
+    problems. Multiple
     visualization tools are included for interpreting and communicating
     feature contributions. The methodology is described in Jiang, Zhang,
     and Zhang (2025) <doi:10.48550/arXiv.2407.03515>.
