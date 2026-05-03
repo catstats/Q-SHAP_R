@@ -4,6 +4,11 @@
 ^\.Rproj\.user$
 ^\.git$
 ^\.gitignore$
+^\.DS_Store$
+^.*\.DS_Store$
+^.*\.Rcheck$
+^.*\.tar\.gz$
+^catboost_info$
 ^README\.md$
 ^tests/.*\.csv$
 ^tests/.*\.py$

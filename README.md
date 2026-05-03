@@ -59,6 +59,8 @@ model <- xgboost(
   max_depth = 2,
   learning_rate = 0.1,
   objective = "reg:squarederror",
+  nthread = 1,
+  verbosity = 0
 )
 
 # Create Q-SHAP explainer
@@ -106,15 +108,11 @@ plot(
 library(lightgbm)
 library(qshap)
 
-# Generate synthetic data with high dimension
-set.seed(42)
-n <- 1000
-p <- 1000
-X <- matrix(rnorm(n * p), nrow = n, ncol = p)
-colnames(X) <- paste0("Feature_", 1:p)
+# Load the same Boston Housing dataset used above
+data(Boston, package = "MASS")
 
-# True model: y depends mainly on first 3 features
-y <- 2 * X[,1] + 1.5 * X[,2] - 0.8 * X[,3] + rnorm(n, 0, 0.5)
+X <- as.matrix(Boston[, -14])  # All columns except medv (target)
+y <- Boston$medv
 
 # Create LightGBM dataset
 dtrain <- lgb.Dataset(data = X, label = y)
@@ -123,7 +121,8 @@ dtrain <- lgb.Dataset(data = X, label = y)
 params <- list(
   objective = "regression",
   metric = "rmse",
-  num_leaves = 15,
+  max_depth = 2,
+  num_leaves = 4,
   learning_rate = 0.1,
   verbose = -1
 )
@@ -169,15 +168,11 @@ plot(
 library(catboost)
 library(qshap)
 
-# Generate synthetic data
-set.seed(42)
-n <- 500
-p <- 10
-X <- matrix(rnorm(n * p), nrow = n, ncol = p)
-colnames(X) <- paste0("Feature_", 1:p)
+# Load the same Boston Housing dataset used above
+data(Boston, package = "MASS")
 
-# True model: y depends mainly on first 3 features
-y <- 3 * X[,1] + 2 * X[,2] - 1.5 * X[,3] + rnorm(n, 0, 0.5)
+X <- as.matrix(Boston[, -14])  # All columns except medv (target)
+y <- Boston$medv
 
 # Create CatBoost dataset and train model
 pool <- catboost.load_pool(data = X, label = y)
@@ -185,9 +180,10 @@ pool <- catboost.load_pool(data = X, label = y)
 params <- list(
   loss_function = "RMSE",
   iterations = 50,
-  depth = 4,
+  depth = 2,
   learning_rate = 0.1,
-  verbose = 0
+  verbose = 0,
+  allow_writing_files = FALSE
 )
 
 model <- catboost.train(pool, params = params)
