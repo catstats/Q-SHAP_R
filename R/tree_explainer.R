@@ -319,8 +319,34 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
   cl <- parallel::makeCluster(ncore)
   on.exit(parallel::stopCluster(cl), add = TRUE)
 
-  # Ensure package namespace is available on workers
-  parallel::clusterEvalQ(cl, suppressPackageStartupMessages(library(qshap)))
+  # Ensure workers load qshap from the same library paths as the main session.
+  # This matters after local/GitHub installs: otherwise PSOCK workers can pick
+  # up an older qshap without newer backends such as CatBoost.
+  qshap_lib_paths <- .libPaths()
+  parallel::clusterExport(cl, varlist = "qshap_lib_paths", envir = environment())
+  parallel::clusterEvalQ(cl, {
+    .libPaths(qshap_lib_paths)
+    suppressPackageStartupMessages(library(qshap))
+    NULL
+  })
+
+  if (identical(explainer$model_type, "catboost")) {
+    worker_has_catboost <- parallel::clusterEvalQ(
+      cl,
+      exists("qshap_loss_catboost", envir = asNamespace("qshap"), inherits = FALSE)
+    )
+    if (!all(unlist(worker_has_catboost))) {
+      worker_versions <- parallel::clusterEvalQ(cl, as.character(utils::packageVersion("qshap")))
+      stop(
+        "Parallel CatBoost Q-SHAP requires workers to load a CatBoost-enabled qshap. ",
+        "The workers loaded qshap version(s): ",
+        paste(unique(unlist(worker_versions)), collapse = ", "),
+        ". Reinstall qshap, restart R, and retry. For development sessions, use ",
+        "devtools::install() rather than only source()/load_all() before ncore > 1.",
+        call. = FALSE
+      )
+    }
+  }
 
   # Export needed data once (avoid resending for every task)
   parallel::clusterExport(
