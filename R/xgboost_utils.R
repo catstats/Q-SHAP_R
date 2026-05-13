@@ -120,12 +120,19 @@ xgb_formatter <- function(model_json, max_depth) {
     # base_weights in XGBoost JSON are already the final tree outputs (eta-scaled during training)
     # Do NOT scale again here - the values are ready to use as-is
     base_w <- as.numeric(unlist(tr$base_weights))
+    threshold <- as.numeric(unlist(tr$split_conditions))
+    finite_threshold <- is.finite(threshold)
+    # XGBoost routes left when x < split_condition, while qshap's shared
+    # traversal uses x <= threshold. Nudge finite thresholds down so equality
+    # follows XGBoost's right branch.
+    threshold[finite_threshold] <- threshold[finite_threshold] -
+      .Machine$double.eps * pmax(1, abs(threshold[finite_threshold]))
 
     out[[i]] <- simple_tree(
       children_left  = as.integer(unlist(tr$left_children)),
       children_right = as.integer(unlist(tr$right_children)),
       feature        = as.integer(unlist(tr$split_indices)),
-      threshold      = as.numeric(unlist(tr$split_conditions)),
+      threshold      = threshold,
       max_depth      = as.integer(max_depth),
       n_node_samples = as.numeric(unlist(tr$sum_hessian)),
       value          = base_w,
