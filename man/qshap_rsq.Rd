@@ -11,8 +11,6 @@ qshap_rsq(
   local = FALSE,
   nsample = NULL,
   sd_out = TRUE,
-  ci_out = TRUE,
-  level = 0.95,
   nfrac = NULL,
   random_state = 42,
   ncore = 1L
@@ -31,10 +29,6 @@ qshap_rsq(
 
 \item{sd_out}{Logical; if TRUE, returns standard deviations of R-squared estimates}
 
-\item{ci_out}{Logical; if TRUE, returns Wald-style confidence intervals for each feature's R-squared (normal approximation using sd_rsq)}
-
-\item{level}{Confidence level for the intervals (default 0.95)}
-
 \item{nfrac}{Optional numeric in (0,1); fraction of samples to use (alternative to nsample)}
 
 \item{random_state}{Integer seed for reproducible sampling}
@@ -46,8 +40,7 @@ or a positive integer. Default is 1 (no parallelization)}
 If \code{local=FALSE} (default), returns a numeric vector of length p 
   containing feature-specific R-squared values. If \code{local=TRUE}, returns 
   a list with components \code{rsq} (the R-squared vector) and \code{loss} 
-  (an n x p matrix of loss contributions). When \code{ci_out=TRUE}, the returned list
-  also contains \code{ci_lower} and \code{ci_upper} vectors representing Wald-style confidence intervals.
+  (an n x p matrix of loss contributions).
 }
 \description{
 Computes feature-specific R-squared values using Q-SHAP decomposition.

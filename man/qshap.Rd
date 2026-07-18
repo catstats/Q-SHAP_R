@@ -12,8 +12,6 @@ qshap(
   local = FALSE,
   nsample = NULL,
   sd_out = TRUE,
-  ci_out = TRUE,
-  level = 0.95,
   nfrac = NULL,
   random_state = 42,
   ncore = 1L
@@ -33,10 +31,6 @@ qshap(
 \item{nsample}{Optional integer; number of samples to use (random subsample if less than nrow(x))}
 
 \item{sd_out}{Logical; if TRUE, returns standard deviations of R-squared estimates}
-
-\item{ci_out}{Logical; if TRUE, returns Wald-style confidence intervals for each feature's R-squared (normal approximation using sd_rsq)}
-
-\item{level}{Confidence level for the intervals (default 0.95)}
 
 \item{nfrac}{Optional numeric in (0,1); fraction of samples to use (alternative to nsample)}
 

@@ -196,8 +196,6 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #' @param y Response vector of length n
  #' @param local Logical; if TRUE, returns both R-squared values and loss matrix
  #' @param sd_out Logical; if TRUE, returns standard deviations of R-squared estimates
- #' @param ci_out Logical; if TRUE, returns Wald-style confidence intervals for each feature's R-squared (normal approximation using sd_rsq)
- #' @param level Confidence level for the intervals (default 0.95)
  #' @param nsample Optional integer; number of samples to use (random subsample if less than nrow(x))
  #' @param nfrac Optional numeric in (0,1); fraction of samples to use (alternative to nsample)
  #' @param random_state Integer seed for reproducible sampling
@@ -207,8 +205,7 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #' @return If \code{local=FALSE} (default), returns a numeric vector of length p 
  #'   containing feature-specific R-squared values. If \code{local=TRUE}, returns 
  #'   a list with components \code{rsq} (the R-squared vector) and \code{loss} 
- #'   (an n x p matrix of loss contributions). When \code{ci_out=TRUE}, the returned list
- #'   also contains \code{ci_lower} and \code{ci_upper} vectors representing Wald-style confidence intervals.
+ #'   (an n x p matrix of loss contributions).
  #'   
  #' @examples
  #' library(xgboost)
@@ -224,7 +221,6 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #'
  #' @keywords internal
 qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = TRUE,
-                      ci_out = TRUE, level = 0.95,
                       nfrac = NULL, random_state = 42,
                       ncore = 1L) {
   # Sampling logic
@@ -245,20 +241,6 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
     sample_idx <- sample(nrow(x), nsample, replace = FALSE)
     x <- x[sample_idx, , drop = FALSE]
     y <- y[sample_idx]
-  }
-
-  # CI implies we need sd estimates
-  if (isTRUE(ci_out)) sd_out <- TRUE
-  if (is.null(level) || length(level) != 1 || is.na(level) || level <= 0 || level >= 1) {
-    stop("level must be a single number in (0, 1)")
-  }
-
-  ci_from_sd <- function(rsq, sd_rsq, level) {
-    z <- stats::qnorm(1 - (1 - level) / 2)
-    list(
-      ci_lower = rsq - z * sd_rsq,
-      ci_upper = rsq + z * sd_rsq
-    )
   }
 
   y_mean_ori <- mean(y)
@@ -292,21 +274,10 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
     } else {
       sd_rsq <- NULL
     }
-    if (ci_out && !is.null(sd_rsq)) {
-      ci <- ci_from_sd(rsq, sd_rsq, level)
-    } else {
-      ci <- NULL
-    }
-
     if (local) {
       out <- list(rsq = rsq, loss = loss, sd_rsq = sd_rsq)
     } else {
       out <- list(rsq = rsq, sd_rsq = sd_rsq)
-    }
-    if (!is.null(ci)) {
-      out$ci_lower <- ci$ci_lower
-      out$ci_upper <- ci$ci_upper
-      out$level <- level
     }
     class(out) <- c("qshap_rsq", "list")
     return(out)
@@ -393,17 +364,7 @@ if (local) {
     } else {
       sd_rsq <- NULL
     }
-  if (ci_out && !is.null(sd_rsq)) {
-    ci <- ci_from_sd(rsq, sd_rsq, level)
-  } else {
-    ci <- NULL
-  }
   out <- list(rsq = rsq, loss = loss, sd_rsq = sd_rsq)
-  if (!is.null(ci)) {
-    out$ci_lower <- ci$ci_lower
-    out$ci_upper <- ci$ci_upper
-    out$level <- level
-  }
   class(out) <- c("qshap_rsq", "list")
   return(out)
 
@@ -426,17 +387,7 @@ if (local) {
     } else {
       sd_rsq <- NULL
     }
-  if (ci_out && !is.null(sd_rsq)) {
-    ci <- ci_from_sd(rsq, sd_rsq, level)
-  } else {
-    ci <- NULL
-  }
   out <- list(rsq = rsq, sd_rsq = sd_rsq)
-  if (!is.null(ci)) {
-    out$ci_lower <- ci$ci_lower
-    out$ci_upper <- ci$ci_upper
-    out$level <- level
-  }
   class(out) <- c("qshap_rsq", "list")
   return(out)
 }
@@ -487,8 +438,8 @@ if (local) {
 #'
 #' @seealso \code{\link{qshap_result}}
 #' @export
-rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = NULL, 
-                sd_out = TRUE, ci_out = TRUE, level = 0.95, nfrac = NULL, 
+rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = NULL,
+                sd_out = TRUE, nfrac = NULL,
                 random_state = 42, ncore = 1L) {
   
   # Call qshap_rsq
@@ -499,8 +450,6 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
     local = local,
     nsample = nsample,
     sd_out = sd_out,
-    ci_out = ci_out,
-    level = level,
     nfrac = nfrac,
     random_state = random_state,
     ncore = ncore
@@ -556,10 +505,10 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
 #' @seealso \code{\link{rsq}}
 #' @export
 qshap <- function(explainer, x, y, feature_names = NULL, local = FALSE,
-                  nsample = NULL, sd_out = TRUE, ci_out = TRUE, level = 0.95,
+                  nsample = NULL, sd_out = TRUE,
                   nfrac = NULL, random_state = 42, ncore = 1L) {
   rsq(explainer, x, y, feature_names = feature_names, local = local,
-      nsample = nsample, sd_out = sd_out, ci_out = ci_out, level = level,
+      nsample = nsample, sd_out = sd_out,
       nfrac = nfrac, random_state = random_state, ncore = ncore)
 }
 
