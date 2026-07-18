@@ -132,12 +132,9 @@ summary.qshap_rsq <- function(object, n = 10, ...) {
   cat("  Total R^2:", round(total_rsq, 6), "\n")
   cat("  Number of features:", length(rsq), "\n")
   
-  # Add SD and CI information if available
+  # Add SD information if available
   if (!is.null(object$sd_rsq)) {
     cat("  Standard errors: Available\n")
-  }
-  if (!is.null(object$ci_lower) && !is.null(object$ci_upper)) {
-    cat("  Confidence intervals:", paste0(round(object$level * 100, 1), "%"), "\n")
   }
   if (!is.null(object$loss)) {
     cat("  Loss matrix dim:", paste(dim(object$loss), collapse = " x "), "\n")
@@ -171,13 +168,9 @@ summary.qshap_rsq <- function(object, n = 10, ...) {
     stringsAsFactors = FALSE
   )
   
-  # Add SD and CI columns if available
+  # Add SD column if available
   if (!is.null(object$sd_rsq)) {
     df$SE <- object$sd_rsq
-  }
-  if (!is.null(object$ci_lower) && !is.null(object$ci_upper)) {
-    df$CI_lower <- object$ci_lower
-    df$CI_upper <- object$ci_upper
   }
   
   df <- df[order(df$R_squared, decreasing = TRUE), ]
@@ -740,4 +733,3 @@ plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "hist", "den
     )
   )
 }
-
