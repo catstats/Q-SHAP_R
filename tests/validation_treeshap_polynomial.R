@@ -288,60 +288,9 @@ stopifnot(max(abs(
       wide_tree$value[1L])
 )) < 2e-12)
 
-# Exercise real non-symmetric CatBoost trees with many features when the
-# optional R CatBoost package is available.  Both policies deterministically
-# use more than 20 split features for this data/seed.
-if (requireNamespace("catboost", quietly = TRUE)) {
-  set.seed(2205)
-  n <- 1200L
-  p <- 100L
-  X <- matrix(stats::rnorm(n * p), nrow = n, ncol = p)
-  y <- rowSums(X[, seq_len(60L), drop = FALSE]) +
-    0.05 * stats::rnorm(n)
-  pool <- catboost::catboost.load_pool(X, label = y)
-
-  for (policy in c("Depthwise", "Lossguide")) {
-    params <- list(
-      loss_function = "RMSE",
-      iterations = 1,
-      depth = 6,
-      learning_rate = 0.2,
-      grow_policy = policy,
-      random_strength = 0,
-      verbose = 0,
-      allow_writing_files = FALSE,
-      random_seed = 2205,
-      thread_count = 1
-    )
-    if (identical(policy, "Lossguide")) {
-      params$max_leaves <- 64
-    }
-
-    model <- catboost::catboost.train(pool, params = params)
-    explainer <- gazer(model)
-    tree <- explainer$trees[[1L]]
-    split_features <- unique(tree$feature[tree$children_left >= 0L])
-    stopifnot(length(split_features) > 20L)
-
-    native_prediction <- catboost::catboost.predict(model, pool)
-    parsed_prediction <- qshap:::catboost_predict_from_trees(
-      X, explainer$trees, explainer$base_score
-    )
-    stopifnot(max(abs(native_prediction - parsed_prediction)) < 1e-12)
-
-    X_float32 <- qshap:::catboost_qshap_matrix(X, list(tree))
-    polynomial_t0 <- compute_polynomial_treeshap(tree, X_float32)
-    native_t0 <- catboost::catboost.get_feature_importance(
-      model, pool, type = "ShapValues"
-    )[, seq_len(p), drop = FALSE]
-    stopifnot(max(abs(polynomial_t0 - native_t0)) < 1e-10)
-
-    loss <- qshap:::qshap_loss_catboost_general(explainer, X, y)
-    stopifnot(identical(dim(loss), c(n, p)))
-    stopifnot(all(is.finite(loss)))
-  }
-} else {
-  message("catboost is not installed; skipping real-model scalability checks.")
-}
+# Real-model CatBoost scalability checks live in
+# validation_catboost_fast.R. That optional validation script is kept out of
+# the source package because the R CatBoost package is not distributed on
+# CRAN.
 
 cat("Polynomial TreeSHAP scalability validation passed.\n")

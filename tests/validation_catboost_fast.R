@@ -376,4 +376,68 @@ malformed_fast_error <- tryCatch(
 stopifnot(grepl("one shared split per level", malformed_fast_error,
                 fixed = TRUE))
 
+# General CatBoost trees can use more than 20 distinct split features. Verify
+# that the polynomial TreeSHAP backend and the general Q-SHAP fallback remain
+# finite and agree with native CatBoost outputs in this wider setting.
+compute_polynomial_treeshap <- function(tree, x) {
+  qshap:::compute_treeshap(
+    x,
+    tree$children_left,
+    tree$children_right,
+    tree$feature,
+    tree$threshold,
+    tree$value,
+    tree$n_node_samples
+  )
+}
+
+set.seed(2205)
+n_wide <- 1200L
+p_wide <- 100L
+X_wide <- matrix(stats::rnorm(n_wide * p_wide), nrow = n_wide, ncol = p_wide)
+y_wide <- rowSums(X_wide[, seq_len(60L), drop = FALSE]) +
+  0.05 * stats::rnorm(n_wide)
+wide_pool <- catboost::catboost.load_pool(X_wide, label = y_wide)
+
+for (policy in c("Depthwise", "Lossguide")) {
+  params <- list(
+    loss_function = "RMSE",
+    iterations = 1,
+    depth = 6,
+    learning_rate = 0.2,
+    grow_policy = policy,
+    random_strength = 0,
+    verbose = 0,
+    allow_writing_files = FALSE,
+    random_seed = 2205,
+    thread_count = 1
+  )
+  if (identical(policy, "Lossguide")) {
+    params$max_leaves <- 64
+  }
+
+  model <- catboost::catboost.train(wide_pool, params = params)
+  explainer <- gazer(model)
+  tree <- explainer$trees[[1L]]
+  split_features <- unique(tree$feature[tree$children_left >= 0L])
+  stopifnot(length(split_features) > 20L)
+
+  native_prediction <- catboost::catboost.predict(model, wide_pool)
+  parsed_prediction <- qshap:::catboost_predict_from_trees(
+    X_wide, explainer$trees, explainer$base_score
+  )
+  stopifnot(max(abs(native_prediction - parsed_prediction)) < 1e-12)
+
+  X_float32 <- qshap:::catboost_qshap_matrix(X_wide, list(tree))
+  polynomial_t0 <- compute_polynomial_treeshap(tree, X_float32)
+  native_t0 <- catboost::catboost.get_feature_importance(
+    model, wide_pool, type = "ShapValues"
+  )[, seq_len(p_wide), drop = FALSE]
+  stopifnot(max(abs(polynomial_t0 - native_t0)) < 1e-10)
+
+  loss <- qshap:::qshap_loss_catboost_general(explainer, X_wide, y_wide)
+  stopifnot(identical(dim(loss), c(n_wide, p_wide)))
+  stopifnot(all(is.finite(loss)))
+}
+
 message("CatBoost SymmetricTree, Depthwise, and Lossguide validation passed.")
