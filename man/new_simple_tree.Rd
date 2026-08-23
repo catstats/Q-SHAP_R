@@ -12,7 +12,9 @@ new_simple_tree(
   max_depth,
   n_node_samples,
   value,
-  node_count
+  node_count,
+  default_left = NULL,
+  xgboost_split = FALSE
 )
 }
 \arguments{
@@ -26,11 +28,16 @@ new_simple_tree(
 
 \item{max_depth}{Integer maximum depth of the tree}
 
-\item{n_node_samples}{Integer vector of sample counts at each node}
+\item{n_node_samples}{Numeric vector of node covers or weights, such as
+sample counts or summed Hessians}
 
 \item{value}{Numeric vector of node values}
 
 \item{node_count}{Integer total number of nodes in the tree}
+
+\item{default_left}{Logical vector indicating the missing-value direction.}
+
+\item{xgboost_split}{Logical; use XGBoost float32 strict-less routing.}
 }
 \value{
 An object of class \code{simple_tree}

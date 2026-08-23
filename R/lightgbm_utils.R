@@ -64,11 +64,13 @@ qshap_loss_lightgbm <- function(explainer, x, y, y_mean_ori = NULL) {
   
       }
     }, error = function(e) {
-      # Fallback: use full model SHAP divided by number of trees
-      warning(paste("LightGBM SHAP calculation failed for iteration", i, "- using fallback approach"))
-      full_shap <- stats::predict(model, x, type = "contrib")
-      tree_pred <- rowSums(full_shap) / num_tree
-      T0_x_tree <- full_shap[, -ncol(full_shap), drop = FALSE] / num_tree
+      stop(
+        "Failed to compute exact per-tree LightGBM contributions for tree ",
+        i,
+        "; this model/version is not currently supported. Details: ",
+        conditionMessage(e),
+        call. = FALSE
+      )
     })
     
     summary_tree <- tree_summaries[[i]]
@@ -103,8 +105,8 @@ lgb_formatter <- function(lgb_model, max_depth) {
     stop("Could not determine number of trees in LightGBM model")
   }
   
-  # Try to extract actual tree structure, but if treeshap fails, fall back to simple structure
-  # First attempt to get the JSON dump and parse it manually
+  # Exact decomposition requires the fitted tree structures. Never substitute
+  # synthetic trees when the model dump cannot be parsed.
   tryCatch({
     if (!requireNamespace("jsonlite", quietly = TRUE)) {
       stop("jsonlite package required for tree parsing")
@@ -112,72 +114,30 @@ lgb_formatter <- function(lgb_model, max_depth) {
     dump_json <- lgb_model$dump_model()
     parsed_model <- jsonlite::fromJSON(dump_json)
     tree_info_df <- parsed_model$tree_info
-    
-    if (nrow(tree_info_df) == 0) {
-      stop("No trees found in model dump")
-    }
-    
-    # Use the actual tree parsing approach
-    use_real_trees <- TRUE
-  }, error = function(e) {
-    # Fall back to simple tree structures
-    use_real_trees <- FALSE
-  })
-  
-  # Initialize list to store simple_tree objects
-  lgb_trees <- list()
-  
-  if (use_real_trees) {
-    # Use real tree parsing with JSON dump
-    for (tree_idx in seq_len(num_trees)) {
-      tree_row <- tree_info_df[tree_idx, ]
-      tree_structure_df <- tree_row$tree_structure
-      
-      # Convert LightGBM tree structure to simple_tree format
-      simple_tree_obj <- lgb_tree_to_simple(tree_structure_df[1, ], max_depth)
-      lgb_trees[[tree_idx]] <- simple_tree_obj
-    }
-  } else {
-    # Use simple fallback tree structures
-    for (tree_idx in seq_len(num_trees)) {
-      # Create a minimal tree structure
-      if (max_depth <= 1) {
-        # Simple binary tree: root -> left leaf, right leaf
-        node_count <- 3
-        children_left <- c(1L, -1L, -1L)
-        children_right <- c(2L, -1L, -1L)
-        feature <- c(0L, -1L, -1L)
-        threshold <- c(0.0, 0.0, 0.0)
-        n_node_samples <- c(100.0, 50.0, 50.0)
-        value <- c(0.0, 0.1, -0.1)
-      } else {
-        # Single leaf node
-        node_count <- 1
-        children_left <- c(-1L)
-        children_right <- c(-1L)
-        feature <- c(-1L)
-        threshold <- c(0.0)
-        n_node_samples <- c(100.0)
-        value <- c(0.0)
-      }
-      
-      # Create simple_tree object
-      tree_obj <- simple_tree(
-        children_left = children_left,
-        children_right = children_right,
-        feature = feature,
-        threshold = threshold,
-        max_depth = max_depth,
-        n_node_samples = n_node_samples,
-        value = value,
-        node_count = node_count
+
+    if (!is.data.frame(tree_info_df) || nrow(tree_info_df) != num_trees) {
+      stop(
+        "Expected ", num_trees, " trees in the model dump, found ",
+        if (is.data.frame(tree_info_df)) nrow(tree_info_df) else 0L
       )
-      
-      lgb_trees[[tree_idx]] <- tree_obj
     }
-  }
-  
-  lgb_trees
+
+    lapply(seq_len(num_trees), function(tree_idx) {
+      tree_structure_df <- tree_info_df[tree_idx, ]$tree_structure
+      if (!is.data.frame(tree_structure_df) || nrow(tree_structure_df) != 1L) {
+        stop("Tree ", tree_idx, " does not contain exactly one root node")
+      }
+
+      lgb_tree_to_simple(tree_structure_df[1, ], max_depth)
+    })
+  }, error = function(e) {
+    stop(
+      "Failed to parse the fitted LightGBM trees exactly; ",
+      "this model/version is not currently supported. Details: ",
+      conditionMessage(e),
+      call. = FALSE
+    )
+  })
 }
 
 # Convert LightGBM tree structure to simple_tree format
@@ -185,6 +145,30 @@ lgb_formatter <- function(lgb_model, max_depth) {
 lgb_tree_to_simple <- function(tree_structure, max_depth) {
   # tree_structure is a data frame row, need to access the actual tree
   root_node <- tree_structure
+
+  required_numeric <- function(node_data, field, node_index) {
+    if (!field %in% names(node_data)) {
+      stop("Node ", node_index, " is missing required field '", field, "'")
+    }
+
+    value <- node_data[[field]]
+    if (length(value) != 1L || !is.numeric(value) || is.na(value) || !is.finite(value)) {
+      stop("Node ", node_index, " has an invalid '", field, "' value")
+    }
+    as.numeric(value)
+  }
+
+  required_child <- function(node_data, field, node_index) {
+    if (!field %in% names(node_data)) {
+      stop("Node ", node_index, " is missing required field '", field, "'")
+    }
+
+    child <- node_data[[field]]
+    if (!is.data.frame(child) || nrow(child) != 1L) {
+      stop("Node ", node_index, " has an invalid '", field, "' node")
+    }
+    child
+  }
   
   # Initialize storage for tree nodes
   nodes <- list()
@@ -203,46 +187,51 @@ lgb_tree_to_simple <- function(tree_structure, max_depth) {
       feature = -1,
       threshold = 0.0,
       value = 0.0,
-      n_samples = 100  # Default sample count
+      n_samples = NA_real_
     )
+
+    node_index <- current_idx - 1L
     
-   # Check if this is a leaf node by looking for leaf_value 
+    # Check if this is a leaf node by looking for leaf_value.
     if ("leaf_value" %in% names(node_data) &&
         length(node_data$leaf_value) > 0 &&
         !is.na(node_data$leaf_value[1])) {
       # Leaf node
-      node_info$value <- node_data$leaf_value[1]  # Extract first value
-      node_info$n_samples <- if("leaf_count" %in% names(node_data)) node_data$leaf_count[1] else 100
+      node_info$value <- required_numeric(node_data, "leaf_value", node_index)
+      node_info$n_samples <- required_numeric(node_data, "leaf_count", node_index)
     } else if ("split_feature" %in% names(node_data) &&
          length(node_data$split_feature) > 0 &&
          !is.na(node_data$split_feature[1])) {
-      # Internal node - has split information
-      node_info$feature <- node_data$split_feature[1]
-      node_info$threshold <- if("threshold" %in% names(node_data)) node_data$threshold[1] else 0.0
-      node_info$value <- if("internal_value" %in% names(node_data)) node_data$internal_value[1] else 0.0
-      node_info$n_samples <- if("internal_count" %in% names(node_data)) node_data$internal_count[1] else 100
-      
-      # Process left child
-      if ("left_child" %in% names(node_data) && !is.null(node_data$left_child)) {
-        left_child_df <- node_data$left_child
-        if (is.data.frame(left_child_df) && nrow(left_child_df) > 0) {
-          left_idx <- traverse_lgb_tree(left_child_df[1, ])
-          node_info$left_child <- left_idx
-        }
+      # This parser currently supports numeric threshold splits only.
+      if (!"decision_type" %in% names(node_data) ||
+          length(node_data$decision_type) != 1L ||
+          !identical(node_data$decision_type, "<=")) {
+        stop("Node ", node_index, " uses an unsupported LightGBM split type")
       }
-      
-      # Process right child  
-      if ("right_child" %in% names(node_data) && !is.null(node_data$right_child)) {
-        right_child_df <- node_data$right_child
-        if (is.data.frame(right_child_df) && nrow(right_child_df) > 0) {
-          right_idx <- traverse_lgb_tree(right_child_df[1, ])
-          node_info$right_child <- right_idx
-        }
+
+      split_feature <- required_numeric(node_data, "split_feature", node_index)
+      if (split_feature < 0 || split_feature != floor(split_feature)) {
+        stop("Node ", node_index, " has an invalid 'split_feature' value")
       }
+      node_info$feature <- as.integer(split_feature)
+      node_info$threshold <- required_numeric(node_data, "threshold", node_index)
+      node_info$value <- required_numeric(node_data, "internal_value", node_index)
+      node_info$n_samples <- required_numeric(node_data, "internal_count", node_index)
+
+      if (!"default_left" %in% names(node_data) ||
+          length(node_data$default_left) != 1L ||
+          !is.logical(node_data$default_left) ||
+          is.na(node_data$default_left)) {
+        stop("Node ", node_index, " has an invalid 'default_left' value")
+      }
+      node_info$default_left <- node_data$default_left
+
+      left_child_df <- required_child(node_data, "left_child", node_index)
+      right_child_df <- required_child(node_data, "right_child", node_index)
+      node_info$left_child <- traverse_lgb_tree(left_child_df[1, ])
+      node_info$right_child <- traverse_lgb_tree(right_child_df[1, ])
     } else {
-      # Unknown node type - treat as leaf with default values
-      node_info$value <- 0.0
-      node_info$n_samples <- 100
+      stop("Node ", node_index, " is neither a supported split node nor a leaf")
     }
     
     nodes[[current_idx]] <<- node_info
@@ -260,6 +249,7 @@ lgb_tree_to_simple <- function(tree_structure, max_depth) {
   threshold <- numeric(node_count)
   n_node_samples <- numeric(node_count)
   value <- numeric(node_count)
+  default_left <- logical(node_count)
   
   for (i in seq_len(node_count)) {
     idx <- i  # 1-based for R arrays
@@ -271,15 +261,8 @@ lgb_tree_to_simple <- function(tree_structure, max_depth) {
     threshold[idx] <- node$threshold
     n_node_samples[idx] <- node$n_samples
     value[idx] <- node$value
+    default_left[idx] <- isTRUE(node$default_left)
   }
-  
-  # Clean up any remaining NA values that might have slipped through
-  children_left[is.na(children_left)] <- -1L
-  children_right[is.na(children_right)] <- -1L
-  feature[is.na(feature)] <- -1L
-  threshold[is.na(threshold)] <- 0.0
-  value[is.na(value)] <- 0.0
-  n_node_samples[is.na(n_node_samples)] <- 100.0
   
   # Create simple_tree object
   simple_tree(
@@ -290,6 +273,7 @@ lgb_tree_to_simple <- function(tree_structure, max_depth) {
     max_depth = max_depth,
     n_node_samples = n_node_samples,
     value = value,
-    node_count = node_count
+    node_count = node_count,
+    default_left = default_left
   )
 }

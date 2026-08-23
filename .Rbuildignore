@@ -9,8 +9,16 @@
 ^.*\.Rcheck$
 ^.*\.tar\.gz$
 ^catboost_info$
+^docs$
 ^README\.md$
+^Rplots\.pdf$
 ^tests/.*\.csv$
 ^tests/.*\.py$
 ^tests/.*\.swp$
+^tests/validation_catboost_fast\.R$
+^tests/validation_t2_reduced_product\.R$
 ^R/.*\.pdf$
+^benchmarks$
+^output$
+^private$
+^tmp$

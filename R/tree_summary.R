@@ -13,6 +13,8 @@ summarize_tree <- function(simple_tree_obj) {
   n_node_samples <- simple_tree_obj$n_node_samples
   value <- simple_tree_obj$value
   node_count <- simple_tree_obj$node_count
+  default_left <- simple_tree_obj[["default_left"]]
+  xgboost_split <- simple_tree_obj[["xgboost_split"]]
 
   # Initialize sample_weight and init_prediction
   sample_weight <- rep(1.0, node_count)
@@ -64,6 +66,8 @@ summarize_tree <- function(simple_tree_obj) {
     max_depth = max_depth,
     sample_weight = sample_weight,
     init_prediction = init_prediction,
-    node_count = node_count
+    node_count = node_count,
+    default_left = default_left,
+    xgboost_split = xgboost_split
   )
 }

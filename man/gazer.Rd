@@ -7,7 +7,7 @@
 gazer(model, max_depth = NULL, base_score = NULL, ...)
 }
 \arguments{
-\item{model}{A model object of class \code{xgboost} or \code{xgb.Booster} from \pkg{xgboost}, or class \code{lgb.Booster} from \pkg{lightgbm}}
+\item{model}{A model object of class \code{xgboost} or \code{xgb.Booster} from \pkg{xgboost}, class \code{lgb.Booster} from \pkg{lightgbm}, or class \code{catboost.Model} from \pkg{catboost}}
 
 \item{max_depth}{Maximum depth of trees, extracted from \code{model} by default.}
 
@@ -31,7 +31,7 @@ n <- 100
 p <- 100
 X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
-model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbosity = 0, nthread = 1)
 explainer <- gazer(model)
 
 }

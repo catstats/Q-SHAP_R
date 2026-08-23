@@ -20,9 +20,12 @@ NULL
 #' @param feature Integer vector of feature indices used for splitting (-1 for leaf nodes)
 #' @param threshold Numeric vector of threshold values for splits
 #' @param max_depth Integer maximum depth of the tree
-#' @param n_node_samples Integer vector of sample counts at each node
+#' @param n_node_samples Numeric vector of node covers or weights, such as
+#'   sample counts or summed Hessians
 #' @param value Numeric vector of node values
 #' @param node_count Integer total number of nodes in the tree
+#' @param default_left Logical vector indicating the missing-value direction.
+#' @param xgboost_split Logical; use XGBoost float32 strict-less routing.
 #' 
 #' @return An object of class \code{simple_tree}
 #' @keywords internal
@@ -33,7 +36,12 @@ new_simple_tree <- function(children_left,
                             max_depth,
                             n_node_samples,
                             value,
-                            node_count) {
+                            node_count,
+                            default_left = NULL,
+                            xgboost_split = FALSE) {
+  if (is.null(default_left)) {
+    default_left <- rep.int(FALSE, node_count)
+  }
   structure(
     list(
       children_left   = as.integer(children_left),
@@ -41,9 +49,11 @@ new_simple_tree <- function(children_left,
       feature         = as.integer(feature),
       threshold       = as.numeric(threshold),
       max_depth       = as.integer(max_depth),
-      n_node_samples  = as.integer(n_node_samples),
+      n_node_samples  = as.numeric(n_node_samples),
       value           = as.numeric(value),
-      node_count      = as.integer(node_count)
+      node_count      = as.integer(node_count),
+      default_left    = as.logical(default_left),
+      xgboost_split   = isTRUE(xgboost_split)
     ),
     class = "simple_tree"
   )
@@ -61,7 +71,8 @@ validate_simple_tree <- function(x) {
   
   # Check that all required fields are present
   required_fields <- c("children_left", "children_right", "feature", "threshold",
-                       "max_depth", "n_node_samples", "value", "node_count")
+                       "max_depth", "n_node_samples", "value", "node_count",
+                       "default_left", "xgboost_split")
   missing <- setdiff(required_fields, names(x))
   if (length(missing) > 0) {
     stop("Missing required fields: ", paste(missing, collapse = ", "), call. = FALSE)
@@ -75,7 +86,8 @@ validate_simple_tree <- function(x) {
       length(x$feature),
       length(x$threshold),
       length(x$n_node_samples),
-      length(x$value)
+      length(x$value),
+      length(x[["default_left"]])
     )
     if (!all(vec_lengths == x$node_count)) {
       stop("All node vectors must have length equal to node_count", call. = FALSE)
@@ -102,10 +114,13 @@ simple_tree <- function(children_left,
                         max_depth,
                         n_node_samples,
                         value,
-                        node_count) {
+                        node_count,
+                        default_left = NULL,
+                        xgboost_split = FALSE) {
   x <- new_simple_tree(
     children_left, children_right, feature, threshold,
-    max_depth, n_node_samples, value, node_count
+    max_depth, n_node_samples, value, node_count,
+    default_left, xgboost_split
   )
   validate_simple_tree(x)
   x
@@ -145,6 +160,8 @@ print.simple_tree <- function(x, ...) {
 #' @param sample_weight Numeric vector of sample weights per node
 #' @param init_prediction Numeric vector of initial predictions per node
 #' @param node_count Integer total number of nodes
+#' @param default_left Logical vector indicating the missing-value direction.
+#' @param xgboost_split Logical; use XGBoost float32 strict-less routing.
 #' 
 #' @return An object of class \code{tree_summary}
 #' @keywords internal
@@ -156,7 +173,12 @@ new_tree_summary <- function(children_left,
                              max_depth,
                              sample_weight,
                              init_prediction,
-                             node_count) {
+                             node_count,
+                             default_left = NULL,
+                             xgboost_split = FALSE) {
+  if (is.null(default_left)) {
+    default_left <- rep.int(FALSE, node_count)
+  }
   structure(
     list(
       children_left   = as.integer(children_left),
@@ -167,7 +189,9 @@ new_tree_summary <- function(children_left,
       max_depth       = as.integer(max_depth),
       sample_weight   = as.numeric(sample_weight),
       init_prediction = as.numeric(init_prediction),
-      node_count      = as.integer(node_count)
+      node_count      = as.integer(node_count),
+      default_left    = as.logical(default_left),
+      xgboost_split   = isTRUE(xgboost_split)
     ),
     class = "tree_summary"
   )
@@ -185,7 +209,8 @@ validate_tree_summary <- function(x) {
   
   # Check required fields
   required_fields <- c("children_left", "children_right", "feature", "feature_uniq",
-                       "threshold", "max_depth", "sample_weight", "init_prediction", "node_count")
+                       "threshold", "max_depth", "sample_weight", "init_prediction",
+                       "node_count", "default_left", "xgboost_split")
   missing <- setdiff(required_fields, names(x))
   if (length(missing) > 0) {
     stop("Missing required fields: ", paste(missing, collapse = ", "), call. = FALSE)
@@ -199,7 +224,8 @@ validate_tree_summary <- function(x) {
       length(x$feature),
       length(x$threshold),
       length(x$sample_weight),
-      length(x$init_prediction)
+      length(x$init_prediction),
+      length(x[["default_left"]])
     )
     if (!all(vec_lengths == x$node_count)) {
       stop("All node vectors must have length equal to node_count", call. = FALSE)
@@ -222,10 +248,13 @@ tree_summary <- function(children_left,
                          max_depth,
                          sample_weight,
                          init_prediction,
-                         node_count) {
+                         node_count,
+                         default_left = NULL,
+                         xgboost_split = FALSE) {
   x <- new_tree_summary(
     children_left, children_right, feature, feature_uniq,
-    threshold, max_depth, sample_weight, init_prediction, node_count
+    threshold, max_depth, sample_weight, init_prediction, node_count,
+    default_left, xgboost_split
   )
   validate_tree_summary(x)
   x
@@ -413,7 +442,11 @@ summary.qshap_tree_explainer <- function(object, ...) {
 #' @param total_rsq Numeric total R-squared (sum of feature-specific values)
 #' @param n_samples Integer number of samples used
 #' @param n_features Integer number of features
-#' @param loss Optional loss matrix (n_samples x n_features)
+#' @param loss Optional raw observation-level squared-loss contribution matrix
+#'   (n_samples x n_features).
+#' @param local_rsq Optional matrix of observation-level contributions to the
+#'   global R-squared decomposition (n_samples x n_features). Its column sums
+#'   equal the feature-specific values in \code{rsq}.
 #' 
 #' @return An object of class \code{qshap_result}
 #' @keywords internal
@@ -422,7 +455,8 @@ new_qshap_result <- function(rsq,
                              total_rsq = NULL,
                              n_samples = NULL,
                              n_features = NULL,
-                             loss = NULL) {
+                             loss = NULL,
+                             local_rsq = NULL) {
   if (is.null(total_rsq)) {
     total_rsq <- sum(rsq, na.rm = TRUE)
   }
@@ -440,7 +474,8 @@ new_qshap_result <- function(rsq,
       total_rsq = as.numeric(total_rsq),
       n_samples = if (!is.null(n_samples)) as.integer(n_samples) else NULL,
       n_features = as.integer(n_features),
-      loss = loss
+      loss = loss,
+      local_rsq = local_rsq
     ),
     class = "qshap_result"
   )
@@ -470,6 +505,28 @@ validate_qshap_result <- function(x) {
   if (length(x$rsq) != x$n_features) {
     stop("Length of rsq must equal n_features", call. = FALSE)
   }
+
+  for (field in c("loss", "local_rsq")) {
+    value <- x[[field]]
+    if (!is.null(value)) {
+      numeric_values <- is.numeric(value) ||
+        (is.data.frame(value) && all(vapply(value, is.numeric, logical(1))))
+      if (length(dim(value)) != 2L || !numeric_values) {
+        stop(field, " must be a numeric matrix or data frame", call. = FALSE)
+      }
+      if (ncol(value) != x$n_features) {
+        stop(field, " must have n_features columns", call. = FALSE)
+      }
+      if (!is.null(x$n_samples) && nrow(value) != x$n_samples) {
+        stop(field, " must have n_samples rows", call. = FALSE)
+      }
+    }
+  }
+
+  if (!is.null(x$loss) && !is.null(x$local_rsq) &&
+      !identical(dim(x$loss), dim(x$local_rsq))) {
+    stop("loss and local_rsq must have identical dimensions", call. = FALSE)
+  }
   
   invisible(x)
 }
@@ -484,8 +541,17 @@ qshap_result <- function(rsq,
                          total_rsq = NULL,
                          n_samples = NULL,
                          n_features = NULL,
-                         loss = NULL) {
-  x <- new_qshap_result(rsq, feature_names, total_rsq, n_samples, n_features, loss)
+                         loss = NULL,
+                         local_rsq = NULL) {
+  x <- new_qshap_result(
+    rsq = rsq,
+    feature_names = feature_names,
+    total_rsq = total_rsq,
+    n_samples = n_samples,
+    n_features = n_features,
+    loss = loss,
+    local_rsq = local_rsq
+  )
   validate_qshap_result(x)
   x
 }
@@ -505,6 +571,13 @@ print.qshap_result <- function(x, n = 10, ...) {
   cat("  Number of features:", x$n_features, "\n")
   if (!is.null(x$n_samples)) {
     cat("  Number of samples:", x$n_samples, "\n")
+  }
+  if (!is.null(x$loss)) {
+    cat("  Raw loss contributions:", paste(dim(x$loss), collapse = " x "), "\n")
+  }
+  if (!is.null(x$local_rsq)) {
+    cat("  Local R^2-scale contributions:",
+        paste(dim(x$local_rsq), collapse = " x "), "\n")
   }
   
   cat("\nTop", min(n, x$n_features), "features by R^2:\n")
@@ -545,6 +618,13 @@ summary.qshap_result <- function(object, ...) {
   cat("  Number of features:", object$n_features, "\n")
   if (!is.null(object$n_samples)) {
     cat("  Number of samples:", object$n_samples, "\n")
+  }
+  if (!is.null(object$loss)) {
+    cat("  Raw loss contributions:", paste(dim(object$loss), collapse = " x "), "\n")
+  }
+  if (!is.null(object$local_rsq)) {
+    cat("  Local R^2-scale contributions:",
+        paste(dim(object$local_rsq), collapse = " x "), "\n")
   }
   
   cat("\nR^2 Distribution:\n")

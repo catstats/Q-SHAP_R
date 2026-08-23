@@ -13,7 +13,9 @@ new_tree_summary(
   max_depth,
   sample_weight,
   init_prediction,
-  node_count
+  node_count,
+  default_left = NULL,
+  xgboost_split = FALSE
 )
 }
 \arguments{
@@ -34,6 +36,10 @@ new_tree_summary(
 \item{init_prediction}{Numeric vector of initial predictions per node}
 
 \item{node_count}{Integer total number of nodes}
+
+\item{default_left}{Logical vector indicating the missing-value direction.}
+
+\item{xgboost_split}{Logical; use XGBoost float32 strict-less routing.}
 }
 \value{
 An object of class \code{tree_summary}

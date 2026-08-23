@@ -8,10 +8,24 @@ src/*.dylib
 *.Rcheck/
 _codeql_detected_source_root
 
+# local R and RStudio state
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Renviron
+.DS_Store
+
 # plots and json files
 *.pdf*
 *.json*
 *.out*
+
+# local experiments and temporary files
+/benchmarks/
+/output/
+/private/
+/tmp/
 
 # test files
 tests/test_plot_method.R

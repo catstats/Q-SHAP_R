@@ -6,14 +6,16 @@
 \usage{
 plot_qshap(
   x,
-  type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss"),
+  type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss", "heatmap",
+    "loss_heatmap"),
   ...
 )
 }
 \arguments{
 \item{x}{A `qshap_rsq` object (recommended) or a numeric vector.}
 
-\item{type}{Plot type; see `plot.qshap_rsq`. Use `"loss"` to launch the interactive explorer (requires a loss matrix).}
+\item{type}{Plot type; see `plot.qshap_rsq`. Use `"loss"` to launch the
+interactive explorer or `"heatmap"` for the static raster heatmap.}
 
 \item{...}{Additional arguments passed to the underlying visualization
 function (e.g., `label`, `rotation`, `color_map_name`, `max_feature`).}

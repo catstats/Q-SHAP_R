@@ -1,8 +1,8 @@
 Package: qshap
 Type: Package
 Title: Fast Calculation of Feature Contributions in Boosting Trees
-Version: 1.0.1
-Date: 2026-05-03
+Version: 2.0.0
+Date: 2026-08-22
 Authors@R: c(
     person("Steven", "He", role = "aut", email = "hess1@uci.edu"),
     person("Zhongli", "Jiang", role = c("aut", "cre"),
@@ -29,6 +29,7 @@ Imports: Rcpp (>= 1.0.14),
  lightgbm,
  viridisLite,
  ggplot2,
+ scales,
  jsonlite,
  methods,
  progress

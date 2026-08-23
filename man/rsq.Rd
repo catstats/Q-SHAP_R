@@ -26,7 +26,10 @@ rsq(
 
 \item{feature_names}{Character vector of feature names. If NULL, uses column names from x.}
 
-\item{local}{Logical; if TRUE, returns both R-squared values and loss matrix}
+\item{local}{Logical; if TRUE, also returns the raw observation-level
+squared-loss contributions in \code{loss} and their normalized
+contributions to the global R-squared decomposition in
+\code{local_rsq}.}
 
 \item{nsample}{Optional integer; number of samples to use (random subsample if less than nrow(x))}
 
@@ -47,7 +50,12 @@ A \code{qshap_result} object containing:
     \item \code{total_rsq}: Total R² (sum of feature-specific values)
     \item \code{n_samples}: Number of samples
     \item \code{n_features}: Number of features
-    \item \code{loss}: Loss matrix (if local=TRUE)
+    \item \code{loss}: Unchanged raw observation-level contributions to the
+      change in squared loss (if \code{local=TRUE})
+    \item \code{local_rsq}: Observation-level contributions to the global
+      R-squared decomposition, equal to \code{-loss / Q_emptyset}, where
+      \eqn{Q_\emptyset = \sum_i (y_i - \bar y)^2}. Its column sums equal
+      \code{rsq} up to numerical tolerance (if \code{local=TRUE})
   }
 }
 \description{
@@ -58,6 +66,11 @@ and provides enhanced \code{print()}, \code{summary()}, and \code{as.data.frame(
 methods for easier analysis.
 }
 \details{
+The \code{local_rsq} matrix contains local contributions on the R-squared
+scale. It decomposes each global feature-specific \code{rsq} value across
+observations and must not be interpreted as an observation-specific
+coefficient of determination.
+
 This function provides a user-friendly interface for Q-SHAP R² computation:
 \itemize{
   \item Automatically extracts feature names from the input data
@@ -74,7 +87,7 @@ n <- 100
 p <- 100
 X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
-model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbosity = 0, nthread = 1)
 explainer <- gazer(model)
 result <- rsq(explainer, X, y)
 print(result)

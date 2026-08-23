@@ -11,6 +11,62 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// catboost_qshap_r2_fast
+Rcpp::List catboost_qshap_r2_fast(const Rcpp::NumericMatrix& X, const Rcpp::NumericVector& y, const Rcpp::List& catboost_trees, double bias, bool compute_sd);
+RcppExport SEXP _qshap_catboost_qshap_r2_fast(SEXP XSEXP, SEXP ySEXP, SEXP catboost_treesSEXP, SEXP biasSEXP, SEXP compute_sdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type catboost_trees(catboost_treesSEXP);
+    Rcpp::traits::input_parameter< double >::type bias(biasSEXP);
+    Rcpp::traits::input_parameter< bool >::type compute_sd(compute_sdSEXP);
+    rcpp_result_gen = Rcpp::wrap(catboost_qshap_r2_fast(X, y, catboost_trees, bias, compute_sd));
+    return rcpp_result_gen;
+END_RCPP
+}
+// catboost_qshap_r2_leaf_cached_nogroup
+Rcpp::List catboost_qshap_r2_leaf_cached_nogroup(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Rcpp::List& catboost_trees, double bias);
+RcppExport SEXP _qshap_catboost_qshap_r2_leaf_cached_nogroup(SEXP XSEXP, SEXP ySEXP, SEXP catboost_treesSEXP, SEXP biasSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type catboost_trees(catboost_treesSEXP);
+    Rcpp::traits::input_parameter< double >::type bias(biasSEXP);
+    rcpp_result_gen = Rcpp::wrap(catboost_qshap_r2_leaf_cached_nogroup(X, y, catboost_trees, bias));
+    return rcpp_result_gen;
+END_RCPP
+}
+// catboost_t0_grouped_fast
+Eigen::MatrixXd catboost_t0_grouped_fast(const Eigen::MatrixXd& X, const Rcpp::List& catboost_trees);
+RcppExport SEXP _qshap_catboost_t0_grouped_fast(SEXP XSEXP, SEXP catboost_treesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type catboost_trees(catboost_treesSEXP);
+    rcpp_result_gen = Rcpp::wrap(catboost_t0_grouped_fast(X, catboost_trees));
+    return rcpp_result_gen;
+END_RCPP
+}
+// T2_ol2d
+Eigen::MatrixXd T2_ol2d(const Eigen::MatrixXd& x, const Rcpp::List& tree_summary, const Eigen::MatrixXcd& store_v_invc, const Eigen::MatrixXcd& store_z, bool parallel);
+RcppExport SEXP _qshap_T2_ol2d(SEXP xSEXP, SEXP tree_summarySEXP, SEXP store_v_invcSEXP, SEXP store_zSEXP, SEXP parallelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type tree_summary(tree_summarySEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXcd& >::type store_v_invc(store_v_invcSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXcd& >::type store_z(store_zSEXP);
+    Rcpp::traits::input_parameter< bool >::type parallel(parallelSEXP);
+    rcpp_result_gen = Rcpp::wrap(T2_ol2d(x, tree_summary, store_v_invc, store_z, parallel));
+    return rcpp_result_gen;
+END_RCPP
+}
 // compute_treeshap
 Eigen::MatrixXd compute_treeshap(const Eigen::MatrixXd& x, const Eigen::VectorXi& children_left, const Eigen::VectorXi& children_right, const Eigen::VectorXi& feature, const Eigen::VectorXd& threshold, const Eigen::VectorXd& value, const Eigen::VectorXd& n_node_samples);
 RcppExport SEXP _qshap_compute_treeshap(SEXP xSEXP, SEXP children_leftSEXP, SEXP children_rightSEXP, SEXP featureSEXP, SEXP thresholdSEXP, SEXP valueSEXP, SEXP n_node_samplesSEXP) {
@@ -84,6 +140,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_qshap_catboost_qshap_r2_fast", (DL_FUNC) &_qshap_catboost_qshap_r2_fast, 5},
+    {"_qshap_catboost_qshap_r2_leaf_cached_nogroup", (DL_FUNC) &_qshap_catboost_qshap_r2_leaf_cached_nogroup, 4},
+    {"_qshap_catboost_t0_grouped_fast", (DL_FUNC) &_qshap_catboost_t0_grouped_fast, 2},
+    {"_qshap_T2_ol2d", (DL_FUNC) &_qshap_T2_ol2d, 5},
     {"_qshap_compute_treeshap", (DL_FUNC) &_qshap_compute_treeshap, 7},
     {"_qshap_T2", (DL_FUNC) &_qshap_T2, 5},
     {"_qshap_loss_treeshap", (DL_FUNC) &_qshap_loss_treeshap, 7},

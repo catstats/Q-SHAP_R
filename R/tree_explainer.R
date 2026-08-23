@@ -26,7 +26,7 @@ NULL
 #' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
-#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbosity = 0, nthread = 1)
 #' explainer <- gazer(model)
 #'
 #' @export
@@ -131,7 +131,18 @@ gazer.catboost.Model <- function(model, max_depth = NULL, ...) {
   actual_max_depth <- attr(cb_trees, "max_depth")
   if (is.null(actual_max_depth)) actual_max_depth <- 6L
 
-  if (is.null(max_depth)) max_depth <- actual_max_depth
+  if (is.null(max_depth)) {
+    max_depth <- actual_max_depth
+  } else {
+    if (length(max_depth) != 1L || is.na(max_depth) || !is.finite(max_depth) ||
+        max_depth < 1 || max_depth != floor(max_depth)) {
+      stop("max_depth must be a positive integer.", call. = FALSE)
+    }
+    # The parsed model gives the exact required depth.  Smaller hints are not
+    # safe, while larger hints only inflate the O(depth^2) root caches and can
+    # overflow integer dimensions without changing the result.
+    max_depth <- actual_max_depth
+  }
 
   explainer <- new_qshap_tree_explainer(
     model = model,
@@ -194,7 +205,10 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #' @param explainer A qshap_tree_explainer object created by \code{gazer()}
  #' @param x Feature matrix or data frame with n samples and p features
  #' @param y Response vector of length n
- #' @param local Logical; if TRUE, returns both R-squared values and loss matrix
+ #' @param local Logical; if TRUE, also returns the raw observation-level
+ #'   squared-loss contributions in \code{loss} and their normalized
+ #'   contributions to the global R-squared decomposition in
+ #'   \code{local_rsq}.
  #' @param sd_out Logical; if TRUE, returns standard deviations of R-squared estimates
  #' @param nsample Optional integer; number of samples to use (random subsample if less than nrow(x))
  #' @param nfrac Optional numeric in (0,1); fraction of samples to use (alternative to nsample)
@@ -202,10 +216,16 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #' @param ncore Number of cores for parallel processing. Use -1 for all available cores, 
  #'   or a positive integer. Default is 1 (no parallelization)
  #' 
- #' @return If \code{local=FALSE} (default), returns a numeric vector of length p 
- #'   containing feature-specific R-squared values. If \code{local=TRUE}, returns 
- #'   a list with components \code{rsq} (the R-squared vector) and \code{loss} 
- #'   (an n x p matrix of loss contributions).
+ #' @return A \code{qshap_rsq} object containing the feature-specific
+ #'   R-squared vector in \code{rsq} and, when requested, \code{sd_rsq}. If
+ #'   \code{local=TRUE}, the object also contains \code{loss} and
+ #'   \code{local_rsq}.
+ #'   The \code{loss} matrix is the unchanged raw observation-level Shapley
+ #'   decomposition of the change in squared loss. If
+ #'   \eqn{Q_\emptyset = \sum_i (y_i - \bar y)^2}, then
+ #'   \code{local_rsq = -loss / Q_emptyset}. Thus, \code{local_rsq} contains
+ #'   observation-level contributions to the global R-squared decomposition;
+ #'   it is not an observation-specific coefficient of determination.
  #'   
  #' @examples
  #' library(xgboost)
@@ -214,7 +234,7 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #' p <- 100
  #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
  #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
- #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+ #' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbosity = 0, nthread = 1)
  #' explainer <- gazer(model)
  #' phi_rsq <- qshap(explainer, X, y)
  #' print(phi_rsq)
@@ -257,6 +277,19 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
 
   n <- nrow(x)
 
+  if (identical(explainer$model_type, "catboost") && !isTRUE(local)) {
+    # Fast CatBoost global backend uses the Q-SHAP paper decomposition:
+    # loss[i, j] = T2[i, j] - 2 * r_i^(k-1) * T0[i, j],
+    # R_j^2 = -sum_i,k loss[i, j] / SST.
+    fast_stats <- qshap_catboost_fast_global_stats(explainer, x, y, compute_sd = sd_out)
+    rsq <- fast_stats$rsq
+    sd_rsq <- if (sd_out) fast_stats$sd_rsq else NULL
+
+    out <- list(rsq = rsq, sd_rsq = sd_rsq)
+    class(out) <- c("qshap_rsq", "list")
+    return(out)
+  }
+
   # Calculate loss (serial)
   if (ncore == 1L || n <= 1L) {
     loss <- qshap_loss(explainer, x, y, y_mean_ori)
@@ -275,7 +308,13 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
       sd_rsq <- NULL
     }
     if (local) {
-      out <- list(rsq = rsq, loss = loss, sd_rsq = sd_rsq)
+      local_rsq <- -loss / sst
+      out <- list(
+        rsq = rsq,
+        loss = loss,
+        local_rsq = local_rsq,
+        sd_rsq = sd_rsq
+      )
     } else {
       out <- list(rsq = rsq, sd_rsq = sd_rsq)
     }
@@ -364,7 +403,13 @@ if (local) {
     } else {
       sd_rsq <- NULL
     }
-  out <- list(rsq = rsq, loss = loss, sd_rsq = sd_rsq)
+  local_rsq <- -loss / sst
+  out <- list(
+    rsq = rsq,
+    loss = loss,
+    local_rsq = local_rsq,
+    sd_rsq = sd_rsq
+  )
   class(out) <- c("qshap_rsq", "list")
   return(out)
 
@@ -411,10 +456,20 @@ if (local) {
 #'     \item \code{total_rsq}: Total R² (sum of feature-specific values)
 #'     \item \code{n_samples}: Number of samples
 #'     \item \code{n_features}: Number of features
-#'     \item \code{loss}: Loss matrix (if local=TRUE)
+#'     \item \code{loss}: Unchanged raw observation-level contributions to the
+#'       change in squared loss (if \code{local=TRUE})
+#'     \item \code{local_rsq}: Observation-level contributions to the global
+#'       R-squared decomposition, equal to \code{-loss / Q_emptyset}, where
+#'       \eqn{Q_\emptyset = \sum_i (y_i - \bar y)^2}. Its column sums equal
+#'       \code{rsq} up to numerical tolerance (if \code{local=TRUE})
 #'   }
 #'
 #' @details
+#' The \code{local_rsq} matrix contains local contributions on the R-squared
+#' scale. It decomposes each global feature-specific \code{rsq} value across
+#' observations and must not be interpreted as an observation-specific
+#' coefficient of determination.
+#'
 #' This function provides a user-friendly interface for Q-SHAP R² computation:
 #' \itemize{
 #'   \item Automatically extracts feature names from the input data
@@ -431,7 +486,7 @@ if (local) {
 #' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
-#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbosity = 0, nthread = 1)
 #' explainer <- gazer(model)
 #' result <- rsq(explainer, X, y)
 #' print(result)
@@ -473,9 +528,12 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
   result$n_samples <- nrow(x)
   result$n_features <- length(result$rsq)
 
-  # Ensure loss is present only when local=TRUE
+  # Ensure local matrices are present only when local=TRUE.
   if (!isTRUE(local) && !is.null(result$loss)) {
     result$loss <- NULL
+  }
+  if (!isTRUE(local) && !is.null(result$local_rsq)) {
+    result$local_rsq <- NULL
   }
 
   class(result) <- c("qshap_result", "qshap_rsq", "list")
@@ -497,7 +555,7 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
 #' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
-#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbosity = 0, nthread = 1)
 #' explainer <- gazer(model)
 #' phi_rsq <- qshap(explainer, X, y)
 #' print(phi_rsq)
@@ -527,7 +585,7 @@ qshap <- function(explainer, x, y, feature_names = NULL, local = FALSE,
 #' p <- 100
 #' X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 #' y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
-#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+#' model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbosity = 0, nthread = 1)
 #' explainer <- gazer(model)
 #' loss_matrix <- loss(explainer, X, y)
 #' dim(loss_matrix)

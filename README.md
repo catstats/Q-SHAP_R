@@ -66,6 +66,10 @@ model <- xgboost(
 # Create Q-SHAP explainer
 explainer <- gazer(model)
 
+# Return the first tree already stored by gazer
+tree <- get_tree(explainer, 1)
+print(tree)
+
 # Calculate feature-specific R^2 values using the rsq() wrapper
 # This returns a qshap_result object with enhanced formatting
 result <- rsq(explainer, X, y)
@@ -81,6 +85,26 @@ df <- as.data.frame(result)
 
 # Calculate loss contributions directly using loss() alias
 loss_matrix <- loss(explainer, X, y)
+
+# Request both local decompositions
+local_result <- rsq(explainer, X, y, local = TRUE)
+raw_loss <- local_result$loss
+
+# Observation-level contributions to the global R² decomposition
+local_rsq <- local_result$local_rsq
+stopifnot(isTRUE(all.equal(
+  colSums(local_rsq),
+  unname(local_result$rsq),
+  check.attributes = FALSE
+)))
+
+# The heatmap displays local_rsq by default; n_show controls the number of observations
+plot(
+  local_result,
+  type = "heatmap",
+  feature_names = colnames(X),
+  n_show = 20
+)
 
 # Calculate model R^2 for verification
 ypred <- predict(model, as.matrix(X))
@@ -191,6 +215,13 @@ remotes::install_url(
 
 After installation, train a `catboost.Model` in R, pass it to `gazer()`, and
 compute feature-specific R-squared values with `rsq()`:
+
+Numeric scalar regression models support all three CatBoost grow policies.
+`SymmetricTree` uses the optimized cached backend, while `Depthwise` and
+`Lossguide` automatically fall back to the general-tree implementation.
+Float32 split boundaries and `nan_mode` routing are preserved. Models that
+contain categorical/CTR splits are rejected explicitly because those splits
+cannot be represented as raw numeric input-column thresholds.
 
 ```r
 # Load required libraries

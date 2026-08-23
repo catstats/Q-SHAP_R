@@ -18,8 +18,22 @@ struct TreeSummary {
     int max_depth;
     Eigen::VectorXd sample_weight;
     Eigen::VectorXd init_prediction;
+    Eigen::VectorXi default_left;
+    bool xgboost_split;
     int node_count;
 };
+
+inline bool tree_goes_left(double value,
+                           double threshold,
+                           int default_left,
+                           bool xgboost_split)
+{
+    if (std::isnan(value))
+        return default_left != 0;
+    if (xgboost_split)
+        return static_cast<float>(value) < static_cast<float>(threshold);
+    return value <= threshold;
+}
 
 struct SimpleTree {
     Eigen::VectorXi children_left;
@@ -54,6 +68,8 @@ void traversal_weight(
     const Eigen::VectorXi& children_right,
     const Eigen::VectorXi& feature,
     const Eigen::VectorXd& threshold,
+    const Eigen::VectorXi& default_left,
+    bool xgboost_split,
     const Eigen::VectorXd& sample_weight,
     const Eigen::VectorXi& leaf_ind,
     Eigen::MatrixXd& w_res,

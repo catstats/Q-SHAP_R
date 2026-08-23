@@ -6,7 +6,7 @@
 #include <Eigen/Dense>
 
 // Compute a decision signature for a sample: for every internal node,
-// record whether x[feature] <= threshold. The weight matrix depends on
+// record the backend-specific branch decision. The weight matrix depends on
 // the sample's decision at ALL internal nodes (not just the path to the
 // sample's leaf), because traversal_weight() explores both branches and
 // uses x(split_feature) <= threshold to distribute weight at every node.
@@ -21,7 +21,9 @@ static std::vector<bool> compute_decision_signature(
     {
         if (summary_tree.children_left(v) >= 0) // internal node
         {
-            sig[v] = (x(summary_tree.feature(v)) <= summary_tree.threshold(v));
+            sig[v] = tree_goes_left(
+                x(summary_tree.feature(v)), summary_tree.threshold(v),
+                summary_tree.default_left(v), summary_tree.xgboost_split);
         }
     }
     return sig;
@@ -268,58 +270,207 @@ Eigen::MatrixXd loss_treeshap(
 }
 
 // ---------------------------------------------------------------------------
-// TreeSHAP for a single tree (naïve subset enumeration).
-// Efficient for trees where the number of unique split features M <= ~20.
-// Complexity: O(n * M * 2^M * depth) per tree.
+// Exact path-dependent TreeSHAP for a single tree.
+//
+// The previous implementation enumerated every subset of the unique split
+// features and therefore stopped at 20 features.  The path recursion below is
+// algebraically equivalent to that conditional-expectation game, including
+// repeated features on a path, but runs in O(L * D^2) per sample (L leaves,
+// maximum depth D) and does not depend exponentially on the total number of
+// features used by the tree.
 // ---------------------------------------------------------------------------
 
-// Recursive conditional expectation: E[pred(x) | x_S]
-// feat_mask: bitmask over features_used indicating which are in S.
-static double cond_exp(
+struct TreeShapPathElement
+{
+    int feature_index;
+    double zero_fraction;
+    double one_fraction;
+    double pweight;
+};
+
+static void extend_tree_shap_path(
+    std::vector<TreeShapPathElement> &path,
+    double zero_fraction,
+    double one_fraction,
+    int feature_index)
+{
+    const int unique_depth = static_cast<int>(path.size());
+    path.push_back({feature_index, zero_fraction, one_fraction,
+                    unique_depth == 0 ? 1.0 : 0.0});
+
+    for (int i = unique_depth - 1; i >= 0; --i)
+    {
+        path[i + 1].pweight +=
+            one_fraction * path[i].pweight *
+            static_cast<double>(i + 1) / static_cast<double>(unique_depth + 1);
+        path[i].pweight =
+            zero_fraction * path[i].pweight *
+            static_cast<double>(unique_depth - i) /
+            static_cast<double>(unique_depth + 1);
+    }
+}
+
+static void unwind_tree_shap_path(
+    std::vector<TreeShapPathElement> &path,
+    int path_index)
+{
+    const int unique_depth = static_cast<int>(path.size()) - 1;
+    const double one_fraction = path[path_index].one_fraction;
+    const double zero_fraction = path[path_index].zero_fraction;
+    double next_one_portion = path[unique_depth].pweight;
+
+    for (int i = unique_depth - 1; i >= 0; --i)
+    {
+        if (one_fraction != 0.0)
+        {
+            const double tmp = path[i].pweight;
+            path[i].pweight =
+                next_one_portion * static_cast<double>(unique_depth + 1) /
+                (static_cast<double>(i + 1) * one_fraction);
+            next_one_portion =
+                tmp - path[i].pweight * zero_fraction *
+                          static_cast<double>(unique_depth - i) /
+                          static_cast<double>(unique_depth + 1);
+        }
+        else
+        {
+            path[i].pweight =
+                path[i].pweight * static_cast<double>(unique_depth + 1) /
+                (zero_fraction * static_cast<double>(unique_depth - i));
+        }
+    }
+
+    // The loop above has already unwound the permutation weights in place.
+    // Only the feature/fraction metadata shifts left; shifting pweight as well
+    // would overwrite those newly reconstructed weights for repeated splits.
+    for (int i = path_index; i < unique_depth; ++i)
+    {
+        path[i].feature_index = path[i + 1].feature_index;
+        path[i].zero_fraction = path[i + 1].zero_fraction;
+        path[i].one_fraction = path[i + 1].one_fraction;
+    }
+    path.pop_back();
+}
+
+static double unwound_tree_shap_path_sum(
+    const std::vector<TreeShapPathElement> &path,
+    int path_index)
+{
+    const int unique_depth = static_cast<int>(path.size()) - 1;
+    const double one_fraction = path[path_index].one_fraction;
+    const double zero_fraction = path[path_index].zero_fraction;
+    double next_one_portion = path[unique_depth].pweight;
+    double total = 0.0;
+
+    if (one_fraction != 0.0)
+    {
+        for (int i = unique_depth - 1; i >= 0; --i)
+        {
+            const double tmp =
+                next_one_portion * static_cast<double>(unique_depth + 1) /
+                (static_cast<double>(i + 1) * one_fraction);
+            total += tmp;
+            next_one_portion =
+                path[i].pweight - tmp * zero_fraction *
+                                      static_cast<double>(unique_depth - i) /
+                                      static_cast<double>(unique_depth + 1);
+        }
+    }
+    else
+    {
+        for (int i = unique_depth - 1; i >= 0; --i)
+        {
+            total +=
+                path[i].pweight * static_cast<double>(unique_depth + 1) /
+                (zero_fraction * static_cast<double>(unique_depth - i));
+        }
+    }
+
+    return total;
+}
+
+static void tree_shap_recursive(
     int node,
     const Eigen::VectorXd &x,
-    int feat_mask,
-    const std::vector<int> &features_used,
-    const Eigen::VectorXi &cl,
-    const Eigen::VectorXi &cr,
-    const Eigen::VectorXi &feat,
-    const Eigen::VectorXd &thresh,
-    const Eigen::VectorXd &val,
-    const Eigen::VectorXd &nsamp)
+    const Eigen::VectorXi &children_left,
+    const Eigen::VectorXi &children_right,
+    const Eigen::VectorXi &feature,
+    const Eigen::VectorXd &threshold,
+    const Eigen::VectorXd &value,
+    const Eigen::VectorXd &n_node_samples,
+    std::vector<TreeShapPathElement> path,
+    double parent_zero_fraction,
+    double parent_one_fraction,
+    int parent_feature_index,
+    Eigen::VectorXd &phi)
 {
-    if (cl(node) < 0)
-        return val(node); // leaf
+    // A branch with neither conditional nor unconditional probability cannot
+    // contribute.  Skipping it also avoids an indeterminate 0/0 while
+    // unwinding a genuinely zero-cover branch.
+    if (parent_zero_fraction == 0.0 && parent_one_fraction == 0.0)
+        return;
 
-    int f = feat(node);
-    int left = cl(node);
-    int right = cr(node);
+    extend_tree_shap_path(
+        path, parent_zero_fraction, parent_one_fraction, parent_feature_index);
 
-    // Check if this feature is conditioned on (in S)
-    bool conditioned = false;
-    for (size_t fi = 0; fi < features_used.size(); fi++)
+    const int left = children_left(node);
+    if (left < 0)
     {
-        if (features_used[fi] == f && (feat_mask & (1 << fi)))
+        const int unique_depth = static_cast<int>(path.size()) - 1;
+        for (int i = 1; i <= unique_depth; ++i)
         {
-            conditioned = true;
+            const double w = unwound_tree_shap_path_sum(path, i);
+            const TreeShapPathElement &element = path[i];
+            phi(element.feature_index) +=
+                w * (element.one_fraction - element.zero_fraction) * value(node);
+        }
+        return;
+    }
+
+    const int right = children_right(node);
+    const int split_feature = feature(node);
+    const bool go_left = x(split_feature) <= threshold(node);
+    const int hot = go_left ? left : right;
+    const int cold = go_left ? right : left;
+
+    const double left_cover = n_node_samples(left);
+    const double right_cover = n_node_samples(right);
+    const double total_cover = left_cover + right_cover;
+    if (!std::isfinite(left_cover) || !std::isfinite(right_cover) ||
+        left_cover < 0.0 || right_cover < 0.0 ||
+        !std::isfinite(total_cover) || total_cover <= 0.0)
+    {
+        Rcpp::stop(
+            "compute_treeshap: child covers at node %d must be finite, "
+            "non-negative, and have a positive sum",
+            node);
+    }
+
+    double incoming_zero_fraction = 1.0;
+    double incoming_one_fraction = 1.0;
+    for (int i = 0; i < static_cast<int>(path.size()); ++i)
+    {
+        if (path[i].feature_index == split_feature)
+        {
+            incoming_zero_fraction = path[i].zero_fraction;
+            incoming_one_fraction = path[i].one_fraction;
+            unwind_tree_shap_path(path, i);
             break;
         }
     }
 
-    if (conditioned)
-    {
-        if (x(f) <= thresh(node))
-            return cond_exp(left, x, feat_mask, features_used, cl, cr, feat, thresh, val, nsamp);
-        else
-            return cond_exp(right, x, feat_mask, features_used, cl, cr, feat, thresh, val, nsamp);
-    }
-    else
-    {
-        double nl = nsamp(left);
-        double nr = nsamp(right);
-        double nt = nl + nr;
-        return (nl / nt) * cond_exp(left, x, feat_mask, features_used, cl, cr, feat, thresh, val, nsamp) +
-               (nr / nt) * cond_exp(right, x, feat_mask, features_used, cl, cr, feat, thresh, val, nsamp);
-    }
+    const double hot_cover = n_node_samples(hot);
+    const double cold_cover = n_node_samples(cold);
+    tree_shap_recursive(
+        hot, x, children_left, children_right, feature, threshold, value,
+        n_node_samples, path,
+        incoming_zero_fraction * hot_cover / total_cover,
+        incoming_one_fraction, split_feature, phi);
+    tree_shap_recursive(
+        cold, x, children_left, children_right, feature, threshold, value,
+        n_node_samples, path,
+        incoming_zero_fraction * cold_cover / total_cover,
+        0.0, split_feature, phi);
 }
 
 // [[Rcpp::export]]
@@ -335,78 +486,35 @@ Eigen::MatrixXd compute_treeshap(
     const int n = x.rows();
     const int p = x.cols();
 
-    // Find unique features used in splits
-    std::vector<int> features_used;
-    for (int v = 0; v < children_left.size(); v++)
-    {
-        if (children_left(v) >= 0)
-        {
-            int f = feature(v);
-            if (std::find(features_used.begin(), features_used.end(), f) == features_used.end())
-                features_used.push_back(f);
-        }
-    }
-    const int M = (int)features_used.size();
-
-    if (M > 20)
-        Rcpp::stop("compute_treeshap: tree uses %d unique features (max 20 for subset enumeration)", M);
-
-    // Precompute Shapley weights: w(s) = s! * (M-s-1)! / M!
-    std::vector<double> sw(M, 0.0);
-    {
-        std::vector<double> lf(M + 1, 0.0);
-        for (int i = 1; i <= M; i++)
-            lf[i] = lf[i - 1] + std::log((double)i);
-        for (int s = 0; s < M; s++)
-            sw[s] = std::exp(lf[s] + lf[M - s - 1] - lf[M]);
-    }
-
     Eigen::MatrixXd shap_out = Eigen::MatrixXd::Zero(n, p);
+
+    const int node_count = children_left.size();
+    if (node_count == 0 || children_right.size() != node_count ||
+        feature.size() != node_count || threshold.size() != node_count ||
+        value.size() != node_count || n_node_samples.size() != node_count)
+    {
+        Rcpp::stop("compute_treeshap: tree arrays must have the same positive length");
+    }
+
+    for (int node = 0; node < node_count; ++node)
+    {
+        const int left = children_left(node);
+        const int right = children_right(node);
+        if ((left < 0) != (right < 0) || left >= node_count || right >= node_count)
+            Rcpp::stop("compute_treeshap: invalid children at node %d", node);
+        if (left >= 0 && (feature(node) < 0 || feature(node) >= p))
+            Rcpp::stop("compute_treeshap: invalid split feature at node %d", node);
+    }
 
     for (int i = 0; i < n; i++)
     {
         const Eigen::VectorXd xi = x.row(i);
-
-        for (int fi = 0; fi < M; fi++)
-        {
-            int j = features_used[fi];
-            double phi = 0.0;
-
-            // Enumerate subsets of features_used \ {feature fi}
-            // other_count = M - 1; 2^(M-1) subsets
-            int other_count = M - 1;
-            int total_subsets = 1 << other_count;
-
-            for (int mask_other = 0; mask_other < total_subsets; mask_other++)
-            {
-                // Build full mask for S (without j) and S∪{j}
-                // Map bits of mask_other to features_used, skipping fi
-                int mask_S = 0;
-                int bit = 0;
-                for (int fi2 = 0; fi2 < M; fi2++)
-                {
-                    if (fi2 == fi)
-                        continue;
-                    if (mask_other & (1 << bit))
-                        mask_S |= (1 << fi2);
-                    bit++;
-                }
-                int mask_S_plus_j = mask_S | (1 << fi);
-
-                int s = __builtin_popcount(mask_S);
-
-                double v_with = cond_exp(0, xi, mask_S_plus_j, features_used,
-                                         children_left, children_right, feature,
-                                         threshold, value, n_node_samples);
-                double v_without = cond_exp(0, xi, mask_S, features_used,
-                                            children_left, children_right, feature,
-                                            threshold, value, n_node_samples);
-
-                phi += sw[s] * (v_with - v_without);
-            }
-
-            shap_out(i, j) = phi;
-        }
+        Eigen::VectorXd phi = Eigen::VectorXd::Zero(p);
+        std::vector<TreeShapPathElement> path;
+        tree_shap_recursive(
+            0, xi, children_left, children_right, feature, threshold, value,
+            n_node_samples, path, 1.0, 1.0, -1, phi);
+        shap_out.row(i) = phi.transpose();
     }
 
     return shap_out;

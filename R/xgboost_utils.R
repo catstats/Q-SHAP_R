@@ -120,13 +120,15 @@ xgb_formatter <- function(model_json, max_depth) {
     # base_weights in XGBoost JSON are already the final tree outputs (eta-scaled during training)
     # Do NOT scale again here - the values are ready to use as-is
     base_w <- as.numeric(unlist(tr$base_weights))
-    threshold <- as.numeric(unlist(tr$split_conditions))
-    finite_threshold <- is.finite(threshold)
-    # XGBoost routes left when x < split_condition, while qshap's shared
-    # traversal uses x <= threshold. Nudge finite thresholds down so equality
-    # follows XGBoost's right branch.
-    threshold[finite_threshold] <- threshold[finite_threshold] -
-      .Machine$double.eps * pmax(1, abs(threshold[finite_threshold]))
+    # Preserve XGBoost's raw split thresholds and learned missing directions.
+    # The shared traversal applies float32 strict-less routing for these trees.
+    threshold <- as.numeric(unlist(tr[["split_conditions"]]))
+    default_left_raw <- tr[["default_left"]]
+    default_left <- if (is.null(default_left_raw)) {
+      rep.int(FALSE, length(threshold))
+    } else {
+      as.logical(unlist(default_left_raw))
+    }
 
     out[[i]] <- simple_tree(
       children_left  = as.integer(unlist(tr$left_children)),
@@ -136,7 +138,9 @@ xgb_formatter <- function(model_json, max_depth) {
       max_depth      = as.integer(max_depth),
       n_node_samples = as.numeric(unlist(tr$sum_hessian)),
       value          = base_w,
-      node_count     = as.integer(tr$tree_param$num_nodes)
+      node_count     = as.integer(tr[["tree_param"]][["num_nodes"]]),
+      default_left   = default_left,
+      xgboost_split  = TRUE
     )
   }
 

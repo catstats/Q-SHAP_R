@@ -26,7 +26,10 @@ qshap(
 
 \item{feature_names}{Character vector of feature names. If NULL, uses column names from x.}
 
-\item{local}{Logical; if TRUE, returns both R-squared values and loss matrix}
+\item{local}{Logical; if TRUE, also returns the raw observation-level
+squared-loss contributions in \code{loss} and their normalized
+contributions to the global R-squared decomposition in
+\code{local_rsq}.}
 
 \item{nsample}{Optional integer; number of samples to use (random subsample if less than nrow(x))}
 
@@ -53,7 +56,7 @@ n <- 100
 p <- 100
 X <- matrix(rnorm(n * p), nrow = n, ncol = p)
 y <- X[, 1] - X[, 2] + rnorm(n, sd = 0.2)
-model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbose = 0)
+model <- xgboost(X, y, nrounds = 15, max_depth = 2, verbosity = 0, nthread = 1)
 explainer <- gazer(model)
 phi_rsq <- qshap(explainer, X, y)
 print(phi_rsq)

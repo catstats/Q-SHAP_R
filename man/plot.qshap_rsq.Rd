@@ -7,7 +7,8 @@
 \method{plot}{qshap_rsq}(
   x,
   y = NULL,
-  type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss"),
+  type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss", "heatmap",
+    "loss_heatmap"),
   ...
 )
 }
@@ -16,7 +17,9 @@
 
 \item{y}{Not used.}
 
-\item{type}{Plot type: one of "rsq", "elbow", "cumu", "gcorr", "hist", "density", or "loss".}
+\item{type}{Plot type: one of "rsq", "elbow", "cumu", "gcorr", "hist",
+"density", "loss", or "heatmap". `"loss_heatmap"` is retained as an
+alias for `"heatmap"`.}
 
 \item{...}{Passed to the underlying visualization function.}
 }

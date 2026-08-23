@@ -10,7 +10,8 @@ new_qshap_result(
   total_rsq = NULL,
   n_samples = NULL,
   n_features = NULL,
-  loss = NULL
+  loss = NULL,
+  local_rsq = NULL
 )
 }
 \arguments{
@@ -24,7 +25,12 @@ new_qshap_result(
 
 \item{n_features}{Integer number of features}
 
-\item{loss}{Optional loss matrix (n_samples x n_features)}
+\item{loss}{Optional raw observation-level squared-loss contribution matrix
+(n_samples x n_features).}
+
+\item{local_rsq}{Optional matrix of observation-level contributions to the
+global R-squared decomposition (n_samples x n_features). Its column sums
+equal the feature-specific values in \code{rsq}.}
 }
 \value{
 An object of class \code{qshap_result}

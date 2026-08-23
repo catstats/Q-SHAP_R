@@ -20,6 +20,20 @@ TreeSummary list_to_tree_summary(const Rcpp::List &tree_summary_list)
     summary.sample_weight = Rcpp::as<Eigen::VectorXd>(sample_weight_r);
     summary.init_prediction = Rcpp::as<Eigen::VectorXd>(init_prediction_r);
 
+    if (tree_summary_list.containsElementNamed("default_left"))
+    {
+        Rcpp::LogicalVector default_left_r = tree_summary_list["default_left"];
+        summary.default_left = Eigen::VectorXi(default_left_r.size());
+        for (int i = 0; i < default_left_r.size(); ++i)
+            summary.default_left(i) = default_left_r(i) == TRUE ? 1 : 0;
+    }
+    else
+    {
+        summary.default_left = Eigen::VectorXi::Zero(summary.children_left.size());
+    }
+    summary.xgboost_split = tree_summary_list.containsElementNamed("xgboost_split") &&
+        Rcpp::as<bool>(tree_summary_list["xgboost_split"]);
+
     summary.max_depth = Rcpp::as<int>(tree_summary_list["max_depth"]);
     summary.node_count = Rcpp::as<int>(tree_summary_list["node_count"]);
 
@@ -137,6 +151,8 @@ void traversal_weight(
     const Eigen::VectorXi &children_right,
     const Eigen::VectorXi &feature,
     const Eigen::VectorXd &threshold,
+    const Eigen::VectorXi &default_left,
+    bool xgboost_split,
     const Eigen::VectorXd &sample_weight,
     const Eigen::VectorXi &leaf_ind,
     Eigen::MatrixXd &w_res,
@@ -210,7 +226,8 @@ void traversal_weight(
 
         Eigen::VectorXd w_r = w;
 
-        if (x(split_feature) <= split_threshold)
+        if (tree_goes_left(x(split_feature), split_threshold,
+                           default_left(v), xgboost_split))
         {
             w(depth) = w(former_depth) * sample_weight(v_l);
             w_r(depth) = 0;
@@ -222,9 +239,11 @@ void traversal_weight(
         }
 
         traversal_weight(x, v_l, w, children_left, children_right, feature, threshold,
-                         sample_weight, leaf_ind, w_res, w_ind, depth + 1, met_feature_copy);
+                         default_left, xgboost_split, sample_weight, leaf_ind,
+                         w_res, w_ind, depth + 1, met_feature_copy);
         traversal_weight(x, v_r, w_r, children_left, children_right, feature, threshold,
-                         sample_weight, leaf_ind, w_res, w_ind, depth + 1, met_feature_copy);
+                         default_left, xgboost_split, sample_weight, leaf_ind,
+                         w_res, w_ind, depth + 1, met_feature_copy);
     }
 }
 
@@ -269,6 +288,7 @@ std::pair<Eigen::MatrixXd, Eigen::MatrixXi> weight(
         x, 0, w,
         summary_tree.children_left, summary_tree.children_right,
         summary_tree.feature, summary_tree.threshold,
+        summary_tree.default_left, summary_tree.xgboost_split,
         summary_tree.sample_weight, leaf_indices,
         w_res, w_ind, 0, met_feature);
 

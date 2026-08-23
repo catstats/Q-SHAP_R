@@ -14,6 +14,7 @@ An environment with visualization functions:
   \item{hist}{Histogram of feature-specific R-squared contributions}
   \item{density}{Density plot of feature-specific R-squared contributions}
   \item{loss}{Interactive loss explorer (requires shiny)}
+  \item{loss_heatmap}{Heatmap of observation-level contributions}
 }
 }
 \usage{
