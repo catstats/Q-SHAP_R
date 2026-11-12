@@ -16,8 +16,9 @@ NULL
 #' @param base_score Base score for predictions, extracted from \code{model} by default.
 #' @param ... Additional arguments, for future use
 #' 
-#' @return A class of \code{qshap_tree_explainer} object containing the model information and
-#'   preprocessed tree structures for fast Shapley value computation
+#' @return A \code{qshap_tree_explainer} containing the model information and
+#'   preprocessed tree structures. All supported backends share this class;
+#'   the \code{model_type} field records the backend for internal dispatch.
 #'   
 #' @examples
 #' library(xgboost)
@@ -446,6 +447,10 @@ if (local) {
 #' The \code{qshap_result} object includes feature names, total R², sample counts,
 #' and provides enhanced \code{print()}, \code{summary()}, and \code{as.data.frame()}
 #' methods for easier analysis.
+#' It inherits from \code{qshap_rsq}, which supplies the plotting method.
+#' The specialized \code{qshap_result} class comes first in S3 dispatch and
+#' supplies the print, summary, and data-frame methods. Use \code{local_rsq()}
+#' to extract labeled observation-level contributions when \code{local = TRUE}.
 #'
 #' @inheritParams qshap_rsq
 #' @param feature_names Character vector of feature names. If NULL, uses column names from x.
@@ -522,7 +527,7 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
   names(result$rsq) <- feature_names
 
   # Make rsq() return the SAME core object as qshap_rsq(),
-  # just with extra metadata and a more general class.
+  # with metadata and the specialized public result class first.
   result$feature_names <- feature_names
   result$total_rsq <- sum(result$rsq, na.rm = TRUE)
   result$n_samples <- nrow(x)
@@ -536,7 +541,7 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
     result$local_rsq <- NULL
   }
 
-  class(result) <- c("qshap_result", "qshap_rsq", "list")
+  class(result) <- c("qshap_result", "qshap_rsq")
   return(result)
 }
 

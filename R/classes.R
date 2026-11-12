@@ -286,7 +286,8 @@ print.tree_summary <- function(x, ...) {
 #' Creates a qshap_tree_explainer object
 #' 
 #' @param model The original tree model object
-#' @param model_type Character string indicating model type ("xgboost" or "lightgbm")
+#' @param model_type Character string indicating the model backend:
+#'   \code{"xgboost"}, \code{"lightgbm"}, or \code{"catboost"}.
 #' @param max_depth Integer maximum tree depth
 #' @param base_score Numeric base score (for XGBoost)
 #' @param trees List of tree objects
@@ -316,16 +317,8 @@ new_qshap_tree_explainer <- function(model,
     obj$base_score <- as.numeric(base_score)
   }
   
-  # Set appropriate classes
-  if (model_type == "xgboost") {
-    class(obj) <- c("qshap_tree_explainer", "xgboost_explainer")
-  } else if (model_type == "lightgbm") {
-    class(obj) <- c("qshap_tree_explainer", "lightgbm_explainer")
-  } else if (model_type == "catboost") {
-    class(obj) <- c("qshap_tree_explainer", "catboost_explainer")
-  } else {
-    class(obj) <- "qshap_tree_explainer"
-  }
+  # Backend routing is recorded in model_type; methods use this shared class.
+  class(obj) <- "qshap_tree_explainer"
   
   obj
 }
@@ -518,7 +511,7 @@ new_qshap_result <- function(rsq,
       loss = loss,
       local_rsq = local_rsq
     ),
-    class = "qshap_result"
+    class = c("qshap_result", "qshap_rsq")
   )
 }
 

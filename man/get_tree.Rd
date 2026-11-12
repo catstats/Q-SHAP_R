@@ -2,9 +2,15 @@
 % Please edit documentation in R/get_tree.R
 \name{get_tree}
 \alias{get_tree}
+\alias{get_tree.default}
+\alias{get_tree.qshap_tree_explainer}
 \title{Return a Tree Stored by Gazer}
 \usage{
 get_tree(explainer, tree = 1L)
+
+\method{get_tree}{default}(explainer, tree = 1L)
+
+\method{get_tree}{qshap_tree_explainer}(explainer, tree = 1L)
 }
 \arguments{
 \item{explainer}{A Q-SHAP explainer created by \code{gazer()}.}
@@ -12,8 +18,14 @@ get_tree(explainer, tree = 1L)
 \item{tree}{One-based index of the tree to return.}
 }
 \value{
-An unclassed named list containing the stored low-level tree fields.
+The stored \code{simple_tree} object, containing the low-level tree
+  fields and retaining its tree class and print method.
 }
 \description{
 Return a Tree Stored by Gazer
+}
+\details{
+The generic rejects unsupported explainer classes. The method for
+  \code{qshap_tree_explainer} validates the stored tree list and requires a
+  finite, scalar, one-based integer index within that list.
 }

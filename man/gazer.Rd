@@ -16,8 +16,9 @@ gazer(model, max_depth = NULL, base_score = NULL, ...)
 \item{...}{Additional arguments, for future use}
 }
 \value{
-A class of \code{qshap_tree_explainer} object containing the model information and
-  preprocessed tree structures for fast Shapley value computation
+A \code{qshap_tree_explainer} containing the model information and
+  preprocessed tree structures. All supported backends share this class;
+  the \code{model_type} field records the backend for internal dispatch.
 }
 \description{
 Creates an explainer object for computing feature-specific Shapley values

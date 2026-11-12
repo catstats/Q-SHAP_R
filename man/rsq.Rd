@@ -64,6 +64,10 @@ returning a \code{qshap_result} object with better formatting and additional met
 The \code{qshap_result} object includes feature names, total R², sample counts,
 and provides enhanced \code{print()}, \code{summary()}, and \code{as.data.frame()}
 methods for easier analysis.
+It inherits from \code{qshap_rsq}, which supplies the plotting method.
+The specialized \code{qshap_result} class comes first in S3 dispatch and
+supplies the print, summary, and data-frame methods. Use \code{local_rsq()}
+to extract labeled observation-level contributions when \code{local = TRUE}.
 }
 \details{
 The \code{local_rsq} matrix contains local contributions on the R-squared

@@ -94,9 +94,9 @@ local_result <- rsq(explainer, X, y, local = TRUE)
 raw_loss <- local_result$loss
 
 # Observation-level contributions to the global R² decomposition
-local_rsq <- local_result$local_rsq
+local_contributions <- local_rsq(local_result)
 stopifnot(isTRUE(all.equal(
-  colSums(local_rsq),
+  colSums(local_contributions),
   unname(local_result$rsq),
   check.attributes = FALSE
 )))
@@ -191,30 +191,9 @@ plot(
 ## Example with CatBoost
 
 CatBoost support in `qshap` is an optional runtime backend. It uses the official
-R `catboost` package directly; it does not call the Python package. Because
-`catboost` for R is not distributed on CRAN, install it from the official
-CatBoost R instructions before running the example:
-
-```r
-install.packages("remotes")
-
-# Choose the OS-specific binary URL from:
-# https://catboost.ai/docs/en/concepts/r-installation
-remotes::install_url(
-  "BINARY_URL",
-  INSTALL_opts = c("--no-multiarch", "--no-test-load")
-)
-
-e.g.
-remotes::install_url(
-
-  "https://github.com/catboost/catboost/releases/download/v1.2.10/catboost-R-darwin-universal2-1.2.10.tgz",
-
-  INSTALL_opts = c("--no-multiarch", "--no-test-load")
-
-)
-
-```
+R `catboost` package directly; it does not call the Python package. For platform-specific installation commands, see the standalone
+[CatBoost R installation guide](docs/CATBOOST_INSTALLATION.md), which includes
+official binary URLs and source-build instructions.
 
 After installation, train a `catboost.Model` in R, pass it to `gazer()`, and
 compute feature-specific R-squared values with `rsq()`:

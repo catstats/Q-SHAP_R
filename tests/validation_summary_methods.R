@@ -66,7 +66,7 @@ explainer <- structure(list(
   model_type = "xgboost", max_depth = 4L, base_score = 0.123456789012345,
   trees = lapply(counts, function(n) list(node_count = n)),
   store_v_invc = matrix(0i, 9L, 5L), store_z = matrix(0i, 9L, 5L)
-), class = c("qshap_tree_explainer", "xgboost_explainer"))
+), class = "qshap_tree_explainer")
 before <- serialize(explainer, NULL)
 output <- capture.output(returned <- withVisible(summary(explainer)))
 es <- returned$value

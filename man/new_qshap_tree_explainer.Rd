@@ -17,7 +17,8 @@ new_qshap_tree_explainer(
 \arguments{
 \item{model}{The original tree model object}
 
-\item{model_type}{Character string indicating model type ("xgboost" or "lightgbm")}
+\item{model_type}{Character string indicating the model backend:
+\code{"xgboost"}, \code{"lightgbm"}, or \code{"catboost"}.}
 
 \item{max_depth}{Integer maximum tree depth}
 
