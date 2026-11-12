@@ -391,42 +391,83 @@ print.qshap_tree_explainer <- function(x, ...) {
 
 #' Summary method for qshap_tree_explainer
 #' 
-#' Provides detailed summary information about the explainer
+#' Computes a separate, programmatically accessible model summary. Printing is
+#' handled by \code{print.summary.qshap_tree_explainer()}.
 #' 
 #' @param object A qshap_tree_explainer object
 #' @param ... Additional arguments (currently unused)
-#' @return The input \code{object} is returned invisibly. Called primarily for
-#'   its side effect of printing a detailed summary of the
-#'   \code{qshap_tree_explainer} object to the console.
+#' @return A list of class \code{summary.qshap_tree_explainer}, containing
+#'   \code{model_type}, \code{n_trees}, \code{max_depth}, \code{base_score},
+#'   \code{node_counts} for all trees, \code{node_count_summary} (minimum,
+#'   mean and maximum), \code{precomputed_initialized}, and
+#'   \code{precomputed_dimensions} (dimensions of \code{v_invc} and \code{z}).
+#'   The original model and cached numerical arrays are not included. Summary
+#'   values retain their numerical precision; an empty ensemble has missing
+#'   node-count summary statistics.
 #' @export
 summary.qshap_tree_explainer <- function(object, ...) {
+  node_counts <- vapply(object$trees, function(tree) {
+    as.numeric(tree$node_count)
+  }, numeric(1))
+  node_count_summary <- c(min = NA_real_, mean = NA_real_, max = NA_real_)
+  if (length(node_counts)) {
+    node_count_summary[] <- c(min(node_counts), mean(node_counts), max(node_counts))
+  }
+
+  structure(list(
+    model_type = object$model_type,
+    n_trees = length(object$trees),
+    max_depth = object$max_depth,
+    base_score = object$base_score,
+    node_counts = node_counts,
+    node_count_summary = node_count_summary,
+    precomputed_initialized = !is.null(object$store_v_invc) && !is.null(object$store_z),
+    precomputed_dimensions = list(
+      v_invc = dim(object$store_v_invc), z = dim(object$store_z)
+    )
+  ), class = "summary.qshap_tree_explainer")
+}
+
+#' Print a Q-SHAP explainer summary
+#'
+#' @param x A \code{summary.qshap_tree_explainer} object.
+#' @param digits Integer number of significant digits to display, from 1 to 22.
+#' @param ... Additional arguments (currently unused).
+#' @return The summary object \code{x}, invisibly.
+#' @export
+print.summary.qshap_tree_explainer <- function(x, digits = 6L, ...) {
+  validate_summary_digits(digits)
+  display <- function(value) format(signif(value, digits), trim = TRUE)
   cat("Q-SHAP Tree Explainer Summary\n")
   cat("=============================\n\n")
-  
+
   cat("Model Information:\n")
-  cat("  Type:", object$model_type, "\n")
-  cat("  Number of trees:", length(object$trees), "\n")
-  cat("  Maximum tree depth:", object$max_depth, "\n")
-  
-  if (!is.null(object$base_score)) {
-    cat("  Base score:", round(object$base_score, 6), "\n")
+  cat("  Type:", x$model_type, "\n")
+  cat("  Number of trees:", x$n_trees, "\n")
+  cat("  Maximum tree depth:", x$max_depth, "\n")
+  if (!is.null(x$base_score)) {
+    cat("  Base score:", display(x$base_score), "\n")
   }
-  
+
   cat("\nTree Structure Statistics:\n")
-  if (length(object$trees) > 0) {
-    # Get node counts from first few trees
-    node_counts <- sapply(object$trees[1:min(5, length(object$trees))], 
-                          function(t) t$node_count)
-    cat("  Average nodes per tree (first 5):", round(mean(node_counts), 1), "\n")
-    cat("  Node count range (first 5):", min(node_counts), "-", max(node_counts), "\n")
+  if (x$n_trees > 0L) {
+    cat("  Average nodes per tree (all trees):", display(x$node_count_summary[["mean"]]), "\n")
+    cat("  Node count range (all trees):", display(x$node_count_summary[["min"]]),
+        "-", display(x$node_count_summary[["max"]]), "\n")
+  } else {
+    cat("  No trees available.\n")
   }
-  
+
   cat("\nComputation Resources:\n")
-  cat("  Precomputed matrices initialized: Yes\n")
-  cat("  Store dimension (v_invc):", 
-      if(is.matrix(object$store_v_invc)) nrow(object$store_v_invc) else "N/A", "\n")
-  
-  invisible(object)
+  cat("  Precomputed matrices initialized:",
+      if (x$precomputed_initialized) "Yes" else "No", "\n")
+  for (name in names(x$precomputed_dimensions)) {
+    dimensions <- x$precomputed_dimensions[[name]]
+    cat("  Store dimensions (", name, "): ",
+        if (is.null(dimensions)) "N/A" else paste(dimensions, collapse = " x "),
+        "\n", sep = "")
+  }
+  invisible(x)
 }
 
 # ============================================================================
@@ -602,44 +643,118 @@ print.qshap_result <- function(x, n = 10, ...) {
 }
 
 #' Summary method for qshap_result
-#' 
+#'
+#' Computes a separate summary without printing. Use its \code{features} table
+#' or \code{rsq_distribution} vector for further analysis, and \code{print()}
+#' to control display precision and the number of displayed features.
+#'
 #' @param object A qshap_result object
 #' @param ... Additional arguments (currently unused)
-#' @return The input \code{object} is returned invisibly. Called primarily for
-#'   its side effect of printing a detailed summary of the \code{qshap_result}
-#'   object to the console.
+#' @return A list of class \code{summary.qshap_result}, containing
+#'   \code{total_rsq}, \code{n_samples}, \code{n_features}, a complete
+#'   \code{features} data frame (columns \code{feature} and \code{rsq}, sorted
+#'   in decreasing contribution order), \code{rsq_distribution} (\code{min},
+#'   \code{q1}, \code{median}, \code{mean}, \code{q3}, \code{max}),
+#'   \code{n_missing}, \code{threshold} (0.01), \code{n_above_threshold},
+#'   \code{loss_dim}, and \code{local_rsq_dim}. Missing contributions are
+#'   excluded from distribution statistics and threshold counts. Empty or
+#'   entirely missing contributions yield missing distribution statistics.
+#'   Numerical values are not rounded. Local matrices themselves are not copied
+#'   into the summary. The threshold count is descriptive, not a significance test.
+#' @examples
+#' result <- qshap_result(c(0.30, 0.15, -0.05),
+#'                        feature_names = c("a", "b", "c"), n_samples = 20)
+#' s <- summary(result)
+#' s$total_rsq
+#' s$features
+#' s$rsq_distribution
+#' print(s, n = 2, digits = 4)
 #' @export
 summary.qshap_result <- function(object, ...) {
+  rsq <- object$rsq
+  observed <- rsq[!is.na(rsq)]
+  distribution <- c(min = NA_real_, q1 = NA_real_, median = NA_real_,
+                    mean = NA_real_, q3 = NA_real_, max = NA_real_)
+  if (length(observed)) {
+    distribution[] <- c(
+      min(observed), stats::quantile(observed, 0.25, names = FALSE),
+      stats::median(observed), mean(observed),
+      stats::quantile(observed, 0.75, names = FALSE), max(observed)
+    )
+  }
+  structure(list(
+    total_rsq = object$total_rsq,
+    n_samples = object$n_samples,
+    n_features = object$n_features,
+    features = as.data.frame(object),
+    rsq_distribution = distribution,
+    n_missing = sum(is.na(rsq)),
+    threshold = 0.01,
+    n_above_threshold = sum(rsq > 0.01, na.rm = TRUE),
+    loss_dim = dim(object$loss),
+    local_rsq_dim = dim(object$local_rsq)
+  ), class = "summary.qshap_result")
+}
+
+#' Print a Q-SHAP result summary
+#'
+#' @param x A \code{summary.qshap_result} object.
+#' @param n Non-negative integer number of top features to display (default: 10).
+#'   This changes display only; the summary retains every feature.
+#' @param digits Integer number of significant digits to display, from 1 to 22.
+#' @param ... Additional arguments passed to the feature table's print method.
+#' @return The summary object \code{x}, invisibly.
+#' @export
+print.summary.qshap_result <- function(x, n = 10L, digits = 6L, ...) {
+  validate_summary_digits(digits)
+  if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
+      !is.finite(n) || n < 0 || n != floor(n)) {
+    stop("n must be a non-negative integer", call. = FALSE)
+  }
+  display <- function(value) format(signif(value, digits), trim = TRUE)
   cat("Q-SHAP Results Summary\n")
   cat("======================\n\n")
-  
+
   cat("Overall Statistics:\n")
-  cat("  Total R^2:", round(object$total_rsq, 6), "\n")
-  cat("  Number of features:", object$n_features, "\n")
-  if (!is.null(object$n_samples)) {
-    cat("  Number of samples:", object$n_samples, "\n")
+  cat("  Total R^2:", display(x$total_rsq), "\n")
+  cat("  Number of features:", x$n_features, "\n")
+  if (!is.null(x$n_samples)) {
+    cat("  Number of samples:", x$n_samples, "\n")
   }
-  if (!is.null(object$loss)) {
-    cat("  Raw loss contributions:", paste(dim(object$loss), collapse = " x "), "\n")
+  if (!is.null(x$loss_dim)) {
+    cat("  Raw loss contributions:", paste(x$loss_dim, collapse = " x "), "\n")
   }
-  if (!is.null(object$local_rsq)) {
+  if (!is.null(x$local_rsq_dim)) {
     cat("  Local R^2-scale contributions:",
-        paste(dim(object$local_rsq), collapse = " x "), "\n")
+        paste(x$local_rsq_dim, collapse = " x "), "\n")
   }
-  
+
   cat("\nR^2 Distribution:\n")
-  cat("  Min:", round(min(object$rsq, na.rm = TRUE), 6), "\n")
-  cat("  Q1:", round(stats::quantile(object$rsq, 0.25, na.rm = TRUE), 6), "\n")
-  cat("  Median:", round(stats::median(object$rsq, na.rm = TRUE), 6), "\n")
-  cat("  Mean:", round(mean(object$rsq, na.rm = TRUE), 6), "\n")
-  cat("  Q3:", round(stats::quantile(object$rsq, 0.75, na.rm = TRUE), 6), "\n")
-  cat("  Max:", round(max(object$rsq, na.rm = TRUE), 6), "\n")
-  
-  # Count significant features
-  sig_features <- sum(object$rsq > 0.01, na.rm = TRUE)
-  cat("\nSignificant Features (R^2 > 0.01):", sig_features, "\n")
-  
-  invisible(object)
+  labels <- c("Min", "Q1", "Median", "Mean", "Q3", "Max")
+  for (i in seq_along(labels)) {
+    cat("  ", labels[i], ": ", display(x$rsq_distribution[i]), "\n", sep = "")
+  }
+  if (x$n_missing > 0L) cat("  Missing contributions:", x$n_missing, "\n")
+  cat("\nFeatures with R^2 >", x$threshold, ":", x$n_above_threshold, "\n")
+
+  n_show <- min(n, nrow(x$features))
+  if (n_show > 0L) {
+    cat("\nTop", n_show, "features by R^2:\n")
+    print(x$features[seq_len(n_show), , drop = FALSE],
+          row.names = FALSE, digits = digits, ...)
+    if (nrow(x$features) > n_show) {
+      cat("... and", nrow(x$features) - n_show, "more features\n")
+    }
+  }
+  invisible(x)
+}
+
+validate_summary_digits <- function(digits) {
+  if (!is.numeric(digits) || length(digits) != 1L || is.na(digits) ||
+      !is.finite(digits) || digits != floor(digits) || digits < 1 || digits > 22) {
+    stop("digits must be an integer between 1 and 22", call. = FALSE)
+  }
+  invisible(digits)
 }
 
 #' Coercion method to data.frame for qshap_result

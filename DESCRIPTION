@@ -36,5 +36,5 @@ Imports: Rcpp (>= 1.0.14),
 Suggests: shiny
 LinkingTo: Rcpp,
  RcppEigen
-RoxygenNote: 7.3.2
+Config/roxygen2/version: 8.1.0
 Encoding: UTF-8

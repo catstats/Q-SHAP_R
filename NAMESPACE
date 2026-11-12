@@ -10,6 +10,8 @@ S3method(print,qshap_result)
 S3method(print,qshap_rsq)
 S3method(print,qshap_tree_explainer)
 S3method(print,simple_tree)
+S3method(print,summary.qshap_result)
+S3method(print,summary.qshap_tree_explainer)
 S3method(print,tree_summary)
 S3method(qshap_loss,qshap_tree_explainer)
 S3method(summary,qshap_result)
@@ -26,12 +28,14 @@ import(Rcpp)
 import(ggplot2)
 import(lightgbm)
 importFrom(methods,new)
-importFrom(parallel,clusterEvalQ)
-importFrom(parallel,clusterExport)
-importFrom(parallel,detectCores)
-importFrom(parallel,makeCluster)
-importFrom(parallel,parLapply)
-importFrom(parallel,stopCluster)
+importFrom(parallel,
+  clusterEvalQ,
+  clusterExport,
+  detectCores,
+  makeCluster,
+  parLapply,
+  stopCluster
+)
 importFrom(scales,label_percent)
 importFrom(stats,predict)
 importFrom(xgboost,xgb.model.dt.tree)

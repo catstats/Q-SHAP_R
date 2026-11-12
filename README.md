@@ -77,8 +77,11 @@ result <- rsq(explainer, X, y)
 # Print shows top 10 features automatically
 print(result)
 
-# Get detailed summary with custom number of top features
-summary(result, n = 5)
+# Save a structured summary and display the top five features
+result_summary <- summary(result)
+result_summary$total_rsq
+result_summary$features
+print(result_summary, n = 5)
 
 # Convert to data frame for further analysis
 df <- as.data.frame(result)
@@ -360,8 +363,11 @@ print(explainer)
 #>   Max depth: 2
 #>   Base score: 22.5328 
 
-# Detailed summary
-summary(explainer)
+# Detailed summary, available as structured data
+explainer_summary <- summary(explainer)
+explainer_summary$n_trees
+explainer_summary$node_count_summary
+print(explainer_summary)
 ```
 
 #### `qshap_result`
@@ -385,12 +391,25 @@ print(result)
 #>      rm 0.3148459
 #>     ...
 
-# Get detailed statistics with custom number of top features
-summary(result, n = 5)  # Show top 5 features
+# Save all summary statistics and feature contributions
+result_summary <- summary(result)
+result_summary$rsq_distribution
+result_summary$features
+print(result_summary, n = 5)  # Display five features; all remain in the summary
 
 # Convert to data frame for further analysis
 df <- as.data.frame(result)
 ```
+
+`summary(explainer)` returns a `summary.qshap_tree_explainer` object with model
+information, node-count statistics across all trees, and precomputation
+dimensions. `summary(result)` returns a `summary.qshap_result` object with the
+total R², sample and feature counts, the complete feature contribution table,
+distribution statistics, and optional local-matrix dimensions. Assignment is
+silent; entering the summary directly displays it through its `print()` method.
+Stored values retain full numerical precision. Use `print(..., digits = 4)` to
+change display precision, and `print(result_summary, n = 5)` to limit the number
+of displayed features. The reported count above R² = 0.01 is descriptive.
 
 ### Visualization Functions
 

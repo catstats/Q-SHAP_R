@@ -12,10 +12,29 @@
 \item{...}{Additional arguments (currently unused)}
 }
 \value{
-The input \code{object} is returned invisibly. Called primarily for
-  its side effect of printing a detailed summary of the \code{qshap_result}
-  object to the console.
+A list of class \code{summary.qshap_result}, containing
+  \code{total_rsq}, \code{n_samples}, \code{n_features}, a complete
+  \code{features} data frame (columns \code{feature} and \code{rsq}, sorted
+  in decreasing contribution order), \code{rsq_distribution} (\code{min},
+  \code{q1}, \code{median}, \code{mean}, \code{q3}, \code{max}),
+  \code{n_missing}, \code{threshold} (0.01), \code{n_above_threshold},
+  \code{loss_dim}, and \code{local_rsq_dim}. Missing contributions are
+  excluded from distribution statistics and threshold counts. Empty or
+  entirely missing contributions yield missing distribution statistics.
+  Numerical values are not rounded. Local matrices themselves are not copied
+  into the summary. The threshold count is descriptive, not a significance test.
 }
 \description{
-Summary method for qshap_result
+Computes a separate summary without printing. Use its \code{features} table
+or \code{rsq_distribution} vector for further analysis, and \code{print()}
+to control display precision and the number of displayed features.
+}
+\examples{
+result <- qshap_result(c(0.30, 0.15, -0.05),
+                       feature_names = c("a", "b", "c"), n_samples = 20)
+s <- summary(result)
+s$total_rsq
+s$features
+s$rsq_distribution
+print(s, n = 2, digits = 4)
 }

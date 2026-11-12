@@ -16,9 +16,11 @@
 ^tests/.*\.py$
 ^tests/.*\.swp$
 ^tests/validation_catboost_fast\.R$
+^tests/validation_summary_catboost\.R$
 ^tests/validation_t2_reduced_product\.R$
 ^R/.*\.pdf$
 ^benchmarks$
 ^output$
 ^private$
 ^tmp$
+^录取通知书$

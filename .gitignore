@@ -26,6 +26,7 @@ _codeql_detected_source_root
 /output/
 /private/
 /tmp/
+/录取通知书/
 
 # test files
 tests/test_plot_method.R

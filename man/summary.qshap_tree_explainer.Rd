@@ -12,10 +12,16 @@
 \item{...}{Additional arguments (currently unused)}
 }
 \value{
-The input \code{object} is returned invisibly. Called primarily for
-  its side effect of printing a detailed summary of the
-  \code{qshap_tree_explainer} object to the console.
+A list of class \code{summary.qshap_tree_explainer}, containing
+  \code{model_type}, \code{n_trees}, \code{max_depth}, \code{base_score},
+  \code{node_counts} for all trees, \code{node_count_summary} (minimum,
+  mean and maximum), \code{precomputed_initialized}, and
+  \code{precomputed_dimensions} (dimensions of \code{v_invc} and \code{z}).
+  The original model and cached numerical arrays are not included. Summary
+  values retain their numerical precision; an empty ensemble has missing
+  node-count summary statistics.
 }
 \description{
-Provides detailed summary information about the explainer
+Computes a separate, programmatically accessible model summary. Printing is
+handled by \code{print.summary.qshap_tree_explainer()}.
 }
