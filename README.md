@@ -21,22 +21,33 @@ Currently supports **XGBoost**, **LightGBM**, and **CatBoost** models.
 
 ## Installation
 
-The development version is `3.0.0`, matching the Python package version.
-
-You can install the released version of `qshap` from CRAN:
+### From CRAN (recommended)
 
 ```r
 install.packages("qshap")
 ```
 
-You can also install the development version from GitHub:
+The examples below target qshap 3.0.0. Check the installed version with
+`packageVersion("qshap")`. If the available CRAN release is older, install
+the 3.0.0 source package using the local instructions below.
+
+### From local sources
+
+From the R package source directory:
 
 ```r
-# Install remotes if you haven't already
 install.packages("remotes")
-
-remotes::install_github("catstats/Q-SHAP_R")
+remotes::install_local(".", dependencies = NA, upgrade = "never")
 ```
+
+Or, from the directory containing the source archive:
+
+```r
+remotes::install_local("qshap_3.0.0.tar.gz", dependencies = NA, upgrade = "never")
+```
+
+Local source installation requires the R development tools for your platform,
+including a C++ compiler.
 
 ## Quick Start with XGBoost
 

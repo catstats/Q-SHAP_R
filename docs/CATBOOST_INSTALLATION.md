@@ -40,8 +40,3 @@ If a release binary cannot be used on your system, follow the official
 [source-build instructions](https://catboost.ai/docs/en/installation/r-installation-github-installation).
 Use a separate local library if you need to preserve an existing installation.
 Record R, CatBoost, and Q-SHAP versions with replication results.
-
-Q-SHAP supports numeric, scalar CatBoost regression models with `SymmetricTree`,
-`Depthwise`, or `Lossguide` growth policies. Categorical/CTR splits, text, and
-embedding splits require additional adapters and are rejected by the current
-implementation.
