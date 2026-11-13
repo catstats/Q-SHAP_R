@@ -24,11 +24,11 @@ plot_loss_heatmap(
 }
 \arguments{
 \item{loss}{A numeric contribution matrix with observations in rows and
-features in columns, or a `qshap_rsq`/`qshap_result` object produced with
+features in columns, or a `qshap_result` object produced with
 `local = TRUE`.}
 
 \item{global_importance}{Optional numeric vector used to order features from
-most to least globally important. For a `qshap_rsq` object, `$rsq` is used
+most to least globally important. For a `qshap_result` object, `$rsq` is used
 automatically. For a matrix, the default is `-colSums(loss)` when
 `quantity = "loss"` and `colSums(loss)` when `quantity = "local_rsq"`.}
 

@@ -217,7 +217,7 @@ qshap_loss.qshap_tree_explainer <- function(explainer, x, y, y_mean_ori = NULL) 
  #' @param ncore Number of cores for parallel processing. Use -1 for all available cores, 
  #'   or a positive integer. Default is 1 (no parallelization)
  #' 
- #' @return A \code{qshap_rsq} object containing the feature-specific
+ #' @return An unclassed list containing the feature-specific
  #'   R-squared vector in \code{rsq} and, when requested, \code{sd_rsq}. If
  #'   \code{local=TRUE}, the object also contains \code{loss} and
  #'   \code{local_rsq}.
@@ -287,7 +287,6 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
     sd_rsq <- if (sd_out) fast_stats$sd_rsq else NULL
 
     out <- list(rsq = rsq, sd_rsq = sd_rsq)
-    class(out) <- c("qshap_rsq", "list")
     return(out)
   }
 
@@ -319,7 +318,6 @@ qshap_rsq <- function(explainer, x, y, local = FALSE, nsample = NULL, sd_out = T
     } else {
       out <- list(rsq = rsq, sd_rsq = sd_rsq)
     }
-    class(out) <- c("qshap_rsq", "list")
     return(out)
   }
 
@@ -411,7 +409,6 @@ if (local) {
     local_rsq = local_rsq,
     sd_rsq = sd_rsq
   )
-  class(out) <- c("qshap_rsq", "list")
   return(out)
 
 } else {
@@ -434,7 +431,6 @@ if (local) {
       sd_rsq <- NULL
     }
   out <- list(rsq = rsq, sd_rsq = sd_rsq)
-  class(out) <- c("qshap_rsq", "list")
   return(out)
 }
 
@@ -447,9 +443,8 @@ if (local) {
 #' The \code{qshap_result} object includes feature names, total R², sample counts,
 #' and provides enhanced \code{print()}, \code{summary()}, and \code{as.data.frame()}
 #' methods for easier analysis.
-#' It inherits from \code{qshap_rsq}, which supplies the plotting method.
-#' The specialized \code{qshap_result} class comes first in S3 dispatch and
-#' supplies the print, summary, and data-frame methods. Use \code{local_rsq()}
+#' Results have the single class \code{qshap_result}, which supplies print,
+#' summary, data-frame, plotting, and local-contribution methods. Use \code{local_rsq()}
 #' to extract labeled observation-level contributions when \code{local = TRUE}.
 #'
 #' @inheritParams qshap_rsq
@@ -526,8 +521,7 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
   # Add names to rsq vector
   names(result$rsq) <- feature_names
 
-  # Make rsq() return the SAME core object as qshap_rsq(),
-  # with metadata and the specialized public result class first.
+  # Add metadata to the unclassed numerical result before assigning its class.
   result$feature_names <- feature_names
   result$total_rsq <- sum(result$rsq, na.rm = TRUE)
   result$n_samples <- nrow(x)
@@ -541,7 +535,7 @@ rsq <- function(explainer, x, y, feature_names = NULL, local = FALSE, nsample = 
     result$local_rsq <- NULL
   }
 
-  class(result) <- c("qshap_result", "qshap_rsq")
+  class(result) <- "qshap_result"
   return(result)
 }
 

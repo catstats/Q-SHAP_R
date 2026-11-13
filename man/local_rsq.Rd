@@ -4,7 +4,6 @@
 \alias{local_rsq}
 \alias{local_rsq.default}
 \alias{local_rsq.qshap_result}
-\alias{local_rsq.qshap_rsq}
 \title{Extract Local Contributions to the Global R-squared Decomposition}
 \usage{
 local_rsq(x, ...)
@@ -12,8 +11,6 @@ local_rsq(x, ...)
 \method{local_rsq}{default}(x, ...)
 
 \method{local_rsq}{qshap_result}(x, ...)
-
-\method{local_rsq}{qshap_rsq}(x, ...)
 }
 \arguments{
 \item{x}{A result returned by \code{rsq(..., local = TRUE)}.}

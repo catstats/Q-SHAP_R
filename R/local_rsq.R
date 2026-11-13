@@ -29,12 +29,6 @@ local_rsq.default <- function(x, ...) {
 #' @rdname local_rsq
 #' @export
 local_rsq.qshap_result <- function(x, ...) {
-  local_rsq.qshap_rsq(x, ...)
-}
-
-#' @rdname local_rsq
-#' @export
-local_rsq.qshap_rsq <- function(x, ...) {
   value <- x[["local_rsq"]]
   if (is.null(value)) {
     stop("Local contributions are unavailable; call rsq(..., local = TRUE)", call. = FALSE)

@@ -15,10 +15,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
       ))
     })
 
-    result <- structure(
-      list(rsq = c(0.4, 0.2, 0.1)),
-      class = "qshap_rsq"
-    )
+    result <- qshap_result(c(0.4, 0.2, 0.1))
 
     rsq_plot <- plot(result)
     plot(result, type = "elbow", save_name = elbow_file)

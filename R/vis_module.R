@@ -37,12 +37,12 @@ vis <- new.env(parent = emptyenv())
   viridisLite::viridis(n)
 }
 
-#' Plot method for qshap_rsq objects
+#' Plot method for qshap_result objects
 #'
-#' This S3 method enables `plot(x, ...)` where `x` is a `qshap_rsq` object.
+#' This S3 method enables `plot(x, ...)` where `x` is a `qshap_result` object.
 #' It dispatches to the visualization functions in `vis`.
 #'
-#' @param x A `qshap_rsq` object.
+#' @param x A `qshap_result` object.
 #' @param y Not used.
 #' @param type Plot type: one of "rsq", "elbow", "cumu", "gcorr", "hist",
 #'   "density", "loss", or "heatmap". `"loss_heatmap"` is retained as an
@@ -51,9 +51,9 @@ vis <- new.env(parent = emptyenv())
 #'
 #' @return A ggplot2 object (invisibly).
 #'
-#' @method plot qshap_rsq
+#' @method plot qshap_result
 #' @export
-plot.qshap_rsq <- function(x, y = NULL,
+plot.qshap_result <- function(x, y = NULL,
                           type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss", "heatmap", "loss_heatmap"), ...) {
   type <- match.arg(type)
 
@@ -77,21 +77,21 @@ plot.qshap_rsq <- function(x, y = NULL,
     if (!is.null(x$loss)) {
       return(invisible(vis$loss(x$loss, ...)))
     }
-    stop("type='loss' requires a qshap_rsq object with a $loss matrix (run qshap_rsq(..., local=TRUE)).")
+    stop("type='loss' requires a qshap_result object with a $loss matrix (run rsq(..., local=TRUE)).")
   }
 
   if (type %in% c("heatmap", "loss_heatmap")) {
     if (is.null(x$local_rsq) && is.null(x$loss)) {
       stop(
-        "type='heatmap' requires a qshap_rsq object with $local_rsq or $loss ",
-        "(run qshap_rsq(..., local=TRUE))."
+        "type='heatmap' requires a qshap_result object with $local_rsq or $loss ",
+        "(run rsq(..., local=TRUE))."
       )
     }
     return(invisible(plot_loss_heatmap(x, ...)))
   }
 
   if (is.null(rsq_values)) {
-    stop("Cannot find R^2 contributions in this qshap_rsq object. Expected one of: $rsq, $phi_rsq, $contrib.")
+    stop("Cannot find R^2 contributions in this qshap_result object. Expected one of: $rsq, $phi_rsq, $contrib.")
   }
 
   rsq_values <- as.numeric(rsq_values)
@@ -105,109 +105,6 @@ plot.qshap_rsq <- function(x, y = NULL,
            hist = vis$hist(rsq_values, ...),
            density = vis$density(rsq_values, ...))
   )
-}
-
-#' @export
-print.qshap_rsq <- function(x, ...) {
-  cat("qshap_rsq object\n")
-  if (!is.null(x$rsq)) {
-    cat("- rsq length:", length(x$rsq), "\n")
-  }
-  if (!is.null(x$loss)) {
-    cat("- loss dim:", paste(dim(x$loss), collapse = " x "), "\n")
-  }
-  if (!is.null(x$local_rsq)) {
-    cat("- local_rsq dim:", paste(dim(x$local_rsq), collapse = " x "), "\n")
-  }
-  invisible(x)
-}
-
-#' Summary method for qshap_rsq objects
-#'
-#' Provides a summary of the qshap_rsq object, showing the top features by R-squared contribution
-#'
-#' @param object A \code{qshap_rsq} object
-#' @param n Integer number of top features to display (default: 10)
-#' @param ... Additional arguments (currently unused)
-#' @return The input \code{object} is returned invisibly. Called primarily for
-#'   its side effect of printing a summary of the \code{qshap_rsq} object to
-#'   the console.
-#' @export
-summary.qshap_rsq <- function(object, n = 10, ...) {
-  cat("Q-SHAP R^2 Summary\n")
-  cat("=================\n\n")
-  
-  if (is.null(object$rsq)) {
-    cat("No R^2 values available in this object.\n")
-    return(invisible(object))
-  }
-  
-  rsq <- object$rsq
-  total_rsq <- sum(rsq, na.rm = TRUE)
-  
-  cat("Overall Statistics:\n")
-  cat("  Total R^2:", round(total_rsq, 6), "\n")
-  cat("  Number of features:", length(rsq), "\n")
-  
-  # Add SD information if available
-  if (!is.null(object$sd_rsq)) {
-    cat("  Standard errors: Available\n")
-  }
-  if (!is.null(object$loss)) {
-    cat("  Loss matrix dim:", paste(dim(object$loss), collapse = " x "), "\n")
-  }
-  if (!is.null(object$local_rsq)) {
-    cat(
-      "  Local R^2-scale contribution matrix dim:",
-      paste(dim(object$local_rsq), collapse = " x "),
-      "\n"
-    )
-  }
-  
-  cat("\nR^2 Distribution:\n")
-  cat("  Min:", round(min(rsq, na.rm = TRUE), 6), "\n")
-  cat("  Q1:", round(stats::quantile(rsq, 0.25, na.rm = TRUE), 6), "\n")
-  cat("  Median:", round(stats::median(rsq, na.rm = TRUE), 6), "\n")
-  cat("  Mean:", round(mean(rsq, na.rm = TRUE), 6), "\n")
-  cat("  Q3:", round(stats::quantile(rsq, 0.75, na.rm = TRUE), 6), "\n")
-  cat("  Max:", round(max(rsq, na.rm = TRUE), 6), "\n")
-  
-  # Count significant features
-  sig_features <- sum(rsq > 0.01, na.rm = TRUE)
-  cat("\nSignificant Features (R^2 > 0.01):", sig_features, "\n")
-  
-  # Show top N features
-  cat("\nTop", min(n, length(rsq)), "features by R^2:\n")
-  
-  # Get feature names if available (from names attribute)
-  feature_names <- names(rsq)
-  if (is.null(feature_names)) {
-    feature_names <- paste0("Feature_", seq_along(rsq))
-  }
-  
-  # Create data frame and sort
-  df <- data.frame(
-    Feature = feature_names,
-    R_squared = rsq,
-    stringsAsFactors = FALSE
-  )
-  
-  # Add SD column if available
-  if (!is.null(object$sd_rsq)) {
-    df$SE <- object$sd_rsq
-  }
-  
-  df <- df[order(df$R_squared, decreasing = TRUE), ]
-  df <- utils::head(df, n)
-  
-  # Print as formatted table
-  print(df, row.names = FALSE, digits = 4)
-  
-  if (length(rsq) > n) {
-    cat("... and", length(rsq) - n, "more features\n")
-  }
-  
-  invisible(object)
 }
 
 # helper: ensure palette maps low->light and high->dark (so large values are darker)
@@ -727,10 +624,10 @@ vis$loss_heatmap <- function(
 #' values remain unchanged. The diverging fill scale is centered at zero.
 #'
 #' @param loss A numeric contribution matrix with observations in rows and
-#'   features in columns, or a `qshap_rsq`/`qshap_result` object produced with
+#'   features in columns, or a `qshap_result` object produced with
 #'   `local = TRUE`.
 #' @param global_importance Optional numeric vector used to order features from
-#'   most to least globally important. For a `qshap_rsq` object, `$rsq` is used
+#'   most to least globally important. For a `qshap_result` object, `$rsq` is used
 #'   automatically. For a matrix, the default is `-colSums(loss)` when
 #'   `quantity = "loss"` and `colSums(loss)` when `quantity = "local_rsq"`.
 #' @param feature_names Optional feature labels. Defaults to `colnames(loss)`.
@@ -780,7 +677,7 @@ plot_loss_heatmap <- function(
     quantity <- match.arg(quantity, c("local_rsq", "loss"))
   }
 
-  if (inherits(loss, "qshap_rsq") || inherits(loss, "qshap_result")) {
+  if (inherits(loss, "qshap_result")) {
     result <- loss
     if (is.null(quantity)) {
       quantity <- if (!is.null(result$local_rsq)) "local_rsq" else "loss"
@@ -1133,12 +1030,12 @@ vis$density <- function(
 
 #' Plot Q-SHAP R-squared contributions
 #'
-#' Convenience wrapper that works for both a `qshap_rsq` object and a plain
+#' Convenience wrapper that works for both a `qshap_result` object and a plain
 #' numeric vector of contributions. Use this if you have a numeric vector and
 #' still want to pass arguments like `color_map_name`.
 #'
-#' @param x A `qshap_rsq` object (recommended) or a numeric vector.
-#' @param type Plot type; see `plot.qshap_rsq`. Use `"loss"` to launch the
+#' @param x A `qshap_result` object (recommended) or a numeric vector.
+#' @param type Plot type; see `plot.qshap_result`. Use `"loss"` to launch the
 #'   interactive explorer or `"heatmap"` for the static raster heatmap.
 #' @param ... Additional arguments passed to the underlying visualization
 #'   function (e.g., `label`, `rotation`, `color_map_name`, `max_feature`).
@@ -1159,8 +1056,8 @@ vis$density <- function(
 #'
 #' @keywords internal
 plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "hist", "density", "loss", "heatmap", "loss_heatmap"), ...) {
-  # If x is a qshap_rsq object, reuse the S3 method
-  if (inherits(x, "qshap_rsq")) {
+  # If x is a qshap_result object, reuse the S3 method
+  if (inherits(x, "qshap_result")) {
     return(plot(x, type = type, ...))
   }
 
@@ -1168,23 +1065,23 @@ plot_qshap <- function(x, type = c("rsq", "elbow", "cumu", "gcorr", "hist", "den
   type <- match.arg(type)
 
   # Interactive loss explorer (Shiny)
-  # - If x is a qshap_rsq object with $loss, use x$loss
+  # - If x is a qshap_result object with $loss, use x$loss
   # - If x is already a loss matrix/array (n x p), use it directly
   if (identical(type, "loss")) {
-    if (inherits(x, "qshap_rsq") && is.list(x) && !is.null(x$loss)) {
+    if (inherits(x, "qshap_result") && is.list(x) && !is.null(x$loss)) {
       return(invisible(vis$loss(x$loss, ...)))
     }
     if (is.matrix(x) || is.array(x)) {
       return(invisible(vis$loss(x, ...)))
     }
-    stop("type='loss' expects a qshap_rsq object with $loss, or a loss matrix/array (n x p). If you used qshap_rsq(..., local=TRUE), pass rsq_cons[[2]] (the loss matrix).")
+    stop("type='loss' expects a qshap_result object with $loss, or a loss matrix/array (n x p). Call rsq(..., local=TRUE) to obtain local contributions.")
   }
 
   if (type %in% c("heatmap", "loss_heatmap")) {
     if (is.matrix(x) || is.data.frame(x) || is.array(x)) {
       return(invisible(plot_loss_heatmap(x, ...)))
     }
-    stop("type='heatmap' expects a qshap_rsq object with $loss, or a loss matrix/data frame (n x p).")
+    stop("type='heatmap' expects a qshap_result object with $loss, or a loss matrix/data frame (n x p).")
   }
 
   rsq_values <- as.numeric(x)

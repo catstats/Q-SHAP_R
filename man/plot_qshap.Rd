@@ -12,9 +12,9 @@ plot_qshap(
 )
 }
 \arguments{
-\item{x}{A `qshap_rsq` object (recommended) or a numeric vector.}
+\item{x}{A `qshap_result` object (recommended) or a numeric vector.}
 
-\item{type}{Plot type; see `plot.qshap_rsq`. Use `"loss"` to launch the
+\item{type}{Plot type; see `plot.qshap_result`. Use `"loss"` to launch the
 interactive explorer or `"heatmap"` for the static raster heatmap.}
 
 \item{...}{Additional arguments passed to the underlying visualization
@@ -24,7 +24,7 @@ function (e.g., `label`, `rotation`, `color_map_name`, `max_feature`).}
 The ggplot2 plot object (invisibly)
 }
 \description{
-Convenience wrapper that works for both a `qshap_rsq` object and a plain
+Convenience wrapper that works for both a `qshap_result` object and a plain
 numeric vector of contributions. Use this if you have a numeric vector and
 still want to pass arguments like `color_map_name`.
 }

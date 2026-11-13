@@ -40,7 +40,7 @@ contributions to the global R-squared decomposition in
 or a positive integer. Default is 1 (no parallelization)}
 }
 \value{
-A \code{qshap_rsq} object containing the feature-specific
+An unclassed list containing the feature-specific
   R-squared vector in \code{rsq} and, when requested, \code{sd_rsq}. If
   \code{local=TRUE}, the object also contains \code{loss} and
   \code{local_rsq}.

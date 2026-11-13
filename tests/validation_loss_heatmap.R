@@ -88,25 +88,17 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 
     local_rsq_matrix <- -loss_matrix / 10
     local_importance <- colSums(local_rsq_matrix)
-    local_result <- structure(
-      list(
-        rsq = local_importance,
-        loss = loss_matrix,
-        local_rsq = local_rsq_matrix
-      ),
-      class = c("qshap_rsq", "list")
-    )
-    dispatched_plot <- plot(local_result, type = "heatmap")
-    alias_plot <- plot(local_result, type = "loss_heatmap")
-    raw_loss_plot <- plot(local_result, type = "heatmap", quantity = "loss")
-    constructed_result <- qshap_result(
+    local_result <- qshap_result(
       rsq = local_importance,
       feature_names = colnames(loss_matrix),
       n_samples = nrow(loss_matrix),
       loss = loss_matrix,
       local_rsq = local_rsq_matrix
     )
-    constructed_plot <- plot_loss_heatmap(constructed_result)
+    dispatched_plot <- plot(local_result, type = "heatmap")
+    alias_plot <- plot(local_result, type = "loss_heatmap")
+    raw_loss_plot <- plot(local_result, type = "heatmap", quantity = "loss")
+    constructed_plot <- plot_loss_heatmap(local_result)
     percent_labels <- dispatched_plot$scales$get_scales("fill")$labels(
       c(-0.01, 0, 0.01)
     )
@@ -117,8 +109,8 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
       inherits(dispatched_plot, "ggplot"),
       inherits(alias_plot, "ggplot"),
       inherits(constructed_plot, "ggplot"),
-      identical(constructed_result$loss, loss_matrix),
-      identical(constructed_result$local_rsq, local_rsq_matrix),
+      identical(local_result$loss, loss_matrix),
+      identical(local_result$local_rsq, local_rsq_matrix),
       identical(
         dispatched_plot$scales$get_scales("x")$labels,
         c("first", "second", "third", "Total")
@@ -151,8 +143,8 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
         "Observation-level loss contributions"
       ),
       isTRUE(all.equal(
-        colSums(local_result$local_rsq),
-        local_result$rsq,
+        unname(colSums(local_result$local_rsq)),
+        unname(local_result$rsq),
         tolerance = 1e-12
       ))
     )

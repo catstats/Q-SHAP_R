@@ -511,7 +511,7 @@ new_qshap_result <- function(rsq,
       loss = loss,
       local_rsq = local_rsq
     ),
-    class = c("qshap_result", "qshap_rsq")
+    class = "qshap_result"
   )
 }
 

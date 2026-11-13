@@ -5,7 +5,7 @@ result <- qshap_result(colSums(values), feature_names = c("a", "b"),
                        n_samples = 2L, local_rsq = values)
 before <- serialize(result, NULL)
 stopifnot(
-  identical(class(result), c("qshap_result", "qshap_rsq")),
+  identical(class(result), "qshap_result"),
   identical(local_rsq(result), `colnames<-`(values, c("a", "b"))),
   identical(serialize(result, NULL), before),
   isTRUE(all.equal(unname(colSums(local_rsq(result))), unname(result$rsq))),
@@ -13,7 +13,10 @@ stopifnot(
 )
 device <- tempfile(fileext = ".pdf")
 grDevices::pdf(device)
-stopifnot(inherits(plot(result), "ggplot"))
+stopifnot(
+  inherits(plot(result), "ggplot"),
+  inherits(qshap:::plot_qshap(result), "ggplot")
+)
 grDevices::dev.off()
 unlink(device)
 
@@ -44,4 +47,18 @@ stopifnot(
   identical(colnames(local_rsq(fitted)), colnames(X)),
   isTRUE(all.equal(unname(colSums(local_rsq(fitted))), unname(fitted$rsq))),
   inherits(get_tree(g), "simple_tree")
+)
+
+# The numerical helper remains unclassed; both public entry points return
+# the same single result class without changing the numerical fields.
+raw <- qshap:::qshap_rsq(g, X, y, local = TRUE)
+alias_result <- qshap(g, X, y, local = TRUE)
+stopifnot(
+  is.list(raw), !is.object(raw),
+  isTRUE(all.equal(unname(raw$rsq), unname(fitted$rsq))),
+  identical(raw$loss, fitted$loss),
+  identical(raw$local_rsq, fitted$local_rsq),
+  identical(class(alias_result), "qshap_result"),
+  identical(alias_result, fitted),
+  is.function(getS3method("plot", "qshap_result"))
 )
