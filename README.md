@@ -25,11 +25,8 @@ Currently supports **XGBoost**, **LightGBM**, and **CatBoost** models.
 
 ```r
 install.packages("qshap")
+library(qshap)
 ```
-
-The examples below target qshap 3.0.0. Check the installed version with
-`packageVersion("qshap")`. If the available CRAN release is older, install
-the 3.0.0 source package using the local instructions below.
 
 ### From local sources
 
