@@ -21,6 +21,8 @@ Currently supports **XGBoost**, **LightGBM**, and **CatBoost** models.
 
 ## Installation
 
+The development version is `3.0.0`, matching the Python package version.
+
 You can install the released version of `qshap` from CRAN:
 
 ```r
