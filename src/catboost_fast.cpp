@@ -254,20 +254,16 @@ Rcpp::List catboost_qshap_r2_fast(const Rcpp::NumericMatrix &X,
 Rcpp::List catboost_qshap_r2_leaf_cached_nogroup(const Eigen::MatrixXd &X,
                                                  const Eigen::VectorXd &y,
                                                  const Rcpp::List &catboost_trees,
-                                                 double bias,
-                                                 bool reuse_leaf_contributions = true) {
-    // Both benchmark modes route and accumulate loss row by row.
-    // The switch controls whether T0 and T2 are reused within each leaf.
+                                                 double bias) {
+    // Baseline for benchmarking the leaf/path residual grouping theorem.
+    // It still caches T0/T2 once per reached leaf, but it does NOT aggregate
+    // residuals by leaf before updating loss_sum.
     const int n = X.rows();
     const int p = X.cols();
     const int num_trees = catboost_trees.size();
-    if (n <= 0 || y.size() != n) {
-        Rcpp::stop("x and y must have the same positive number of observations.");
-    }
 
     Eigen::VectorXd cum_pred = Eigen::VectorXd::Constant(n, bias);
     Eigen::VectorXd loss_sum = Eigen::VectorXd::Zero(p);
-    double contribution_evaluations = 0;
 
     for (int tree_idx = 0; tree_idx < num_trees; ++tree_idx) {
         ObliviousTree tree = list_to_oblivious_tree(catboost_trees[tree_idx]);
@@ -291,7 +287,7 @@ Rcpp::List catboost_qshap_r2_leaf_cached_nogroup(const Eigen::MatrixXd &X,
 
         for (int i = 0; i < n; ++i) {
             const int leaf = route_oblivious_leaf(X, i, level_feature, level_threshold);
-            if (!reuse_leaf_contributions || !leaf_ready[leaf]) {
+            if (!leaf_ready[leaf]) {
                 catboost_leaf_T0_T2_compact(
                     tree,
                     leaf,
@@ -301,7 +297,6 @@ Rcpp::List catboost_qshap_r2_leaf_cached_nogroup(const Eigen::MatrixXd &X,
                     leaf_cache[leaf].T2
                 );
                 leaf_ready[leaf] = 1;
-                ++contribution_evaluations;
             }
 
             const double residual = y(i) - cum_pred(i);
@@ -329,8 +324,7 @@ Rcpp::List catboost_qshap_r2_leaf_cached_nogroup(const Eigen::MatrixXd &X,
         Rcpp::Named("rsq") = rsq,
         Rcpp::Named("loss_sum") = loss_sum,
         Rcpp::Named("n") = n,
-        Rcpp::Named("SST") = SST,
-        Rcpp::Named("contribution_evaluations") = contribution_evaluations
+        Rcpp::Named("SST") = SST
     );
 }
 

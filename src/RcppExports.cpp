@@ -27,8 +27,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // catboost_qshap_r2_leaf_cached_nogroup
-Rcpp::List catboost_qshap_r2_leaf_cached_nogroup(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Rcpp::List& catboost_trees, double bias, bool reuse_leaf_contributions);
-RcppExport SEXP _qshap_catboost_qshap_r2_leaf_cached_nogroup(SEXP XSEXP, SEXP ySEXP, SEXP catboost_treesSEXP, SEXP biasSEXP, SEXP reuse_leaf_contributionsSEXP) {
+Rcpp::List catboost_qshap_r2_leaf_cached_nogroup(const Eigen::MatrixXd& X, const Eigen::VectorXd& y, const Rcpp::List& catboost_trees, double bias);
+RcppExport SEXP _qshap_catboost_qshap_r2_leaf_cached_nogroup(SEXP XSEXP, SEXP ySEXP, SEXP catboost_treesSEXP, SEXP biasSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -36,8 +36,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type y(ySEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type catboost_trees(catboost_treesSEXP);
     Rcpp::traits::input_parameter< double >::type bias(biasSEXP);
-    Rcpp::traits::input_parameter< bool >::type reuse_leaf_contributions(reuse_leaf_contributionsSEXP);
-    rcpp_result_gen = Rcpp::wrap(catboost_qshap_r2_leaf_cached_nogroup(X, y, catboost_trees, bias, reuse_leaf_contributions));
+    rcpp_result_gen = Rcpp::wrap(catboost_qshap_r2_leaf_cached_nogroup(X, y, catboost_trees, bias));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -142,7 +141,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_qshap_catboost_qshap_r2_fast", (DL_FUNC) &_qshap_catboost_qshap_r2_fast, 5},
-    {"_qshap_catboost_qshap_r2_leaf_cached_nogroup", (DL_FUNC) &_qshap_catboost_qshap_r2_leaf_cached_nogroup, 5},
+    {"_qshap_catboost_qshap_r2_leaf_cached_nogroup", (DL_FUNC) &_qshap_catboost_qshap_r2_leaf_cached_nogroup, 4},
     {"_qshap_catboost_t0_grouped_fast", (DL_FUNC) &_qshap_catboost_t0_grouped_fast, 2},
     {"_qshap_T2_ol2d", (DL_FUNC) &_qshap_T2_ol2d, 5},
     {"_qshap_compute_treeshap", (DL_FUNC) &_qshap_compute_treeshap, 7},

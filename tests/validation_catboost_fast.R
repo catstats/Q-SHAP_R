@@ -100,18 +100,6 @@ for (policy in c("SymmetricTree", "Depthwise", "Lossguide")) {
     # arbitrary-tree path used as the non-symmetric fallback.
     generic_loss <- qshap:::qshap_loss_catboost_general(explainer, X, y)
     stopifnot(max(abs(local$loss - generic_loss)) < 1e-9)
-
-    prepared <- qshap:::catboost_qshap_matrix(X, explainer$trees)
-    compare_reuse <- qshap:::catboost_qshap_r2_leaf_cached_nogroup
-    per_leaf <- compare_reuse(prepared, y, explainer$trees, explainer$base_score)
-    per_observation <- compare_reuse(prepared, y, explainer$trees,
-                                    explainer$base_score, reuse_leaf_contributions = FALSE)
-    stopifnot(
-      identical(per_leaf$rsq, per_observation$rsq),
-      max(abs(per_leaf$rsq - global$rsq)) < 1e-9,
-      per_observation$contribution_evaluations == nrow(X) * length(explainer$trees),
-      per_leaf$contribution_evaluations < per_observation$contribution_evaluations
-    )
   } else if (identical(policy, "Lossguide")) {
     # Lossguide's leaf budget should produce at least one non-complete tree,
     # proving the fallback is not accidentally assuming a 2^depth layout.

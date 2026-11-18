@@ -5,8 +5,8 @@ catboost_qshap_r2_fast <- function(X, y, catboost_trees, bias, compute_sd = TRUE
     .Call(`_qshap_catboost_qshap_r2_fast`, X, y, catboost_trees, bias, compute_sd)
 }
 
-catboost_qshap_r2_leaf_cached_nogroup <- function(X, y, catboost_trees, bias, reuse_leaf_contributions = TRUE) {
-    .Call(`_qshap_catboost_qshap_r2_leaf_cached_nogroup`, X, y, catboost_trees, bias, reuse_leaf_contributions)
+catboost_qshap_r2_leaf_cached_nogroup <- function(X, y, catboost_trees, bias) {
+    .Call(`_qshap_catboost_qshap_r2_leaf_cached_nogroup`, X, y, catboost_trees, bias)
 }
 
 catboost_t0_grouped_fast <- function(X, catboost_trees) {
