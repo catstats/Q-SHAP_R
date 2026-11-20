@@ -17,7 +17,7 @@ xgb <- xgboost::xgboost(x = x, y = y, nrounds = 4L, max_depth = 2L,
 pool <- catboost::catboost.load_pool(as.matrix(x), label = y)
 catboost_model <- catboost::catboost.train(pool, NULL, params = list(
     iterations = 4L, depth = 2L, thread_count = 1L, loss_function = "RMSE",
-    verbose = FALSE, allow_writing_files = FALSE
+    logging_level = "Silent", allow_writing_files = FALSE
 ))
 for (model in list(xgb, catboost_model)) {
     result <- qshap::rsq(qshap::gazer(model), x, y, local = TRUE)
