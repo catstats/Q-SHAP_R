@@ -1,0 +1,69 @@
+name: Publish Q-SHAP replication image
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: qshap-replication-image
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/catstats/qshap-replication
+  RELEASE_TAG: 3.0.0-py313
+
+jobs:
+  build:
+    name: Build and test Linux ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Build
+        run: |
+          docker build --platform "linux/$ARCH" \
+            --build-arg MAKEFLAGS=-j4 \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --tag "$IMAGE:$RELEASE_TAG-$ARCH" docs/docker
+
+      - name: Run offline smoke test
+        run: |
+          docker run --rm -i --network none "$IMAGE:$RELEASE_TAG-$ARCH" \
+            bash -s < docs/docker/smoke-test.sh
+
+      - name: Push tested image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker push "$IMAGE:$RELEASE_TAG-$ARCH"
+
+  manifest:
+    name: Publish the combined image tag
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+    steps:
+      - name: Publish and inspect
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          docker buildx imagetools create --tag "$IMAGE:$RELEASE_TAG" \
+            "$IMAGE:$RELEASE_TAG-amd64" "$IMAGE:$RELEASE_TAG-arm64"
+          docker buildx imagetools inspect "$IMAGE:$RELEASE_TAG"
